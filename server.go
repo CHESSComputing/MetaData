@@ -21,6 +21,10 @@ var StaticFs embed.FS
 // Verbose defines verbosity level
 var Verbose int
 
+// global variables
+var _beamlines []string
+var _smgr SchemaManager
+
 // helper function to handle base path of URL requests
 func base(api string) string {
 	b := srvConfig.Config.CHESSMetaData.WebServer.Base
@@ -77,6 +81,17 @@ func Server() {
 	// init server.StaticFs
 	server.StaticFs = StaticFs
 
+	// initialize schema manager
+	_smgr = SchemaManager{}
+	for _, fname := range srvConfig.Config.CHESSMetaData.SchemaFiles {
+		_, err := _smgr.Load(fname)
+		if err != nil {
+			log.Fatalf("unable to load %s error %v", fname, err)
+		}
+		_beamlines = append(_beamlines, utils.FileName(fname))
+	}
+
+	log.Println("Schema", _smgr.String())
 	// setup web router and start the service
 	r := setupRouter()
 	sport := fmt.Sprintf(":%d", srvConfig.Config.CHESSMetaData.WebServer.Port)
