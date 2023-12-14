@@ -55,6 +55,8 @@ func setupRouter() *gin.Engine {
 	r.POST(base("/json"), UploadJsonHandler)
 	// end of TMP
 
+	r.GET(base("/"), DataHandler)
+
 	// all POST methods ahould be authorized
 	authorized := r.Group("/")
 	authorized.Use(authz.TokenMiddleware(srvConfig.Config.Authz.ClientID, Verbose))

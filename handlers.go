@@ -4,11 +4,13 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	srvConfig "github.com/CHESSComputing/common/config"
@@ -234,11 +236,39 @@ func SearchHandler(c *gin.Context) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(server.Top(c) + page + server.Bottom(c)))
 }
+
+// DataHandler provides access to / and /data end-points
+func DataHandler(c *gin.Context) {
+	r := c.Request
+	w := c.Writer
+	user, _ := username(r)
+	tmpl := server.MakeTmpl(c, "Data")
+	tmpl["User"] = user
+	tmpl["Date"] = time.Now().Unix()
+	tmpl["Beamlines"] = _beamlines
+	var forms []string
+	for idx, fname := range srvConfig.Config.CHESSMetaData.SchemaFiles {
+		cls := "hide"
+		if idx == 0 {
+			cls = ""
+		}
+		form, err := genForm(c, fname, nil)
+		if err != nil {
+			log.Println("ERROR", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		beamlineForm := fmt.Sprintf("<div id=\"%s\" class=\"%s\">%s</div>", utils.FileName(fname), cls, form)
+		forms = append(forms, beamlineForm)
+	}
+	tmpl["Form"] = template.HTML(strings.Join(forms, "\n"))
+	page := utils.TmplPage(StaticFs, "keys.tmpl", tmpl)
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(server.Top(c) + page + server.Bottom(c)))
+}
 func UpdateRecordHandler(c *gin.Context) {
 }
 func UploadJsonHandler(c *gin.Context) {
-}
-func DataHandler(c *gin.Context) {
 }
 func ProcessHandler(c *gin.Context) {
 }
