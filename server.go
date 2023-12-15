@@ -3,13 +3,15 @@ package main
 import (
 	"embed"
 	"fmt"
+	"io/fs"
 	"log"
+	"net/http"
 
-	authz "github.com/CHESSComputing/common/authz"
-	srvConfig "github.com/CHESSComputing/common/config"
-	mongo "github.com/CHESSComputing/common/mongo"
-	server "github.com/CHESSComputing/common/server"
-	utils "github.com/CHESSComputing/common/utils"
+	authz "github.com/CHESSComputing/golib/authz"
+	srvConfig "github.com/CHESSComputing/golib/config"
+	mongo "github.com/CHESSComputing/golib/mongo"
+	server "github.com/CHESSComputing/golib/server"
+	utils "github.com/CHESSComputing/golib/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -24,6 +26,28 @@ var Verbose int
 // global variables
 var _beamlines []string
 var _smgr SchemaManager
+var _header, _footer string
+
+// init function
+// func init() {
+// }
+
+func header() string {
+	if _header == "" {
+		tmpl := server.MakeTmpl(StaticFs, "Header")
+		tmpl["Base"] = srvConfig.Config.CHESSMetaData.WebServer.Base
+		_header = server.TmplPage(StaticFs, "header.tmpl", tmpl)
+	}
+	return _header
+}
+func footer() string {
+	if _footer == "" {
+		tmpl := server.MakeTmpl(StaticFs, "Footer")
+		tmpl["Base"] = srvConfig.Config.CHESSMetaData.WebServer.Base
+		_footer = server.TmplPage(StaticFs, "footer.tmpl", tmpl)
+	}
+	return _footer
+}
 
 // helper function to handle base path of URL requests
 func base(api string) string {
@@ -42,8 +66,9 @@ func setupRouter() *gin.Engine {
 	r.GET("/meta/:site", MetaSiteHandler)
 
 	// CHESSDataManagement APIs
-	r.GET(base("/faq"), server.FAQHandler)
-	r.GET(base("/status"), server.StatusHandler)
+	r.GET(base("/faq"), FAQHandler)
+	r.GET(base("/status"), MetricsHandler)
+	r.GET(base("/metrics"), MetricsHandler)
 	r.GET(base("/schemas"), SchemasHandler)
 	r.GET(base("/data"), DataHandler)
 	r.GET(base("/process"), ProcessHandler)
@@ -54,8 +79,6 @@ func setupRouter() *gin.Engine {
 	r.POST(base("/updateRecord"), UpdateRecordHandler)
 	r.POST(base("/json"), UploadJsonHandler)
 	// end of TMP
-
-	r.GET(base("/"), DataHandler)
 
 	// all POST methods ahould be authorized
 	authorized := r.Group("/")
@@ -69,6 +92,21 @@ func setupRouter() *gin.Engine {
 		authorized.DELETE("/meta/:mid", MetaDeleteHandler)
 	}
 
+	r.GET(base("/"), DataHandler)
+
+	// static files
+	for _, dir := range []string{"js", "css", "images", "templates"} {
+		filesFS, err := fs.Sub(StaticFs, "static/"+dir)
+		if err != nil {
+			log.Fatal(err)
+		}
+		m := fmt.Sprintf("%s/%s", srvConfig.Config.CHESSMetaData.WebServer.Base, dir)
+		r.StaticFS(m, http.FS(filesFS))
+	}
+
+	// assign middleware
+	r.Use(server.CounterMiddleware())
+
 	return r
 }
 
@@ -79,9 +117,6 @@ func Server() {
 
 	// init Verbose
 	Verbose = srvConfig.Config.CHESSMetaData.WebServer.Verbose
-
-	// init server.StaticFs
-	server.StaticFs = StaticFs
 
 	// initialize schema manager
 	_smgr = SchemaManager{}

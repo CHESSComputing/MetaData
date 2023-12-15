@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
-	srvConfig "github.com/CHESSComputing/common/config"
-	mongo "github.com/CHESSComputing/common/mongo"
-	server "github.com/CHESSComputing/common/server"
-	utils "github.com/CHESSComputing/common/utils"
+	srvConfig "github.com/CHESSComputing/golib/config"
+	mongo "github.com/CHESSComputing/golib/mongo"
+	server "github.com/CHESSComputing/golib/server"
+	utils "github.com/CHESSComputing/golib/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -45,7 +45,7 @@ func username(r *http.Request) (string, error) {
 
 // helper function to make pagination
 func pagination(c *gin.Context, query string, nres, startIdx, limit int) string {
-	tmpl := server.MakeTmpl(c, "Search")
+	tmpl := server.MakeTmpl(StaticFs, "Search")
 	url := fmt.Sprintf("/search?query=%s", query)
 	if nres > 0 {
 		tmpl["StartIndex"] = fmt.Sprintf("%d", startIdx+1)
@@ -62,7 +62,7 @@ func pagination(c *gin.Context, query string, nres, startIdx, limit int) string 
 	tmpl["PrevUrl"] = makeURL(url, "prev", startIdx, limit, nres)
 	tmpl["NextUrl"] = makeURL(url, "next", startIdx, limit, nres)
 	tmpl["LastUrl"] = makeURL(url, "last", startIdx, limit, nres)
-	page := utils.TmplPage(StaticFs, "pagiantion.tmpl", tmpl)
+	page := server.TmplPage(StaticFs, "pagiantion.tmpl", tmpl)
 	return fmt.Sprintf("%s<br>", page)
 }
 
@@ -200,10 +200,10 @@ func genForm(c *gin.Context, fname string, record *mongo.Record) (string, error)
 		out = append(out, "</fieldset>")
 	}
 	form := strings.Join(out, "\n")
-	tmpl := server.MakeTmpl(c, "Form")
+	tmpl := server.MakeTmpl(StaticFs, "Form")
 	tmpl["Beamline"] = beamline
 	tmpl["Form"] = template.HTML(form)
-	return utils.TmplPage(StaticFs, "form_beamline.tmpl", tmpl), nil
+	return server.TmplPage(StaticFs, "form_beamline.tmpl", tmpl), nil
 }
 
 // helper function to create form entry
@@ -218,7 +218,7 @@ func formEntry(c *gin.Context, smap map[string]SchemaRecord, k, s, required stri
 		defaultValue = strings.Replace(defaultValue, "[", "", -1)
 		defaultValue = strings.Replace(defaultValue, "]", "", -1)
 	}
-	tmpl := server.MakeTmpl(c, "FormEntry")
+	tmpl := server.MakeTmpl(StaticFs, "FormEntry")
 	tmpl["Key"] = k
 	tmpl["Value"] = defaultValue
 	tmpl["Placeholder"] = ""
@@ -308,7 +308,7 @@ func formEntry(c *gin.Context, smap map[string]SchemaRecord, k, s, required stri
 			tmpl["Placeholder"] = r.Placeholder
 		}
 	}
-	return utils.TmplPage(StaticFs, "form_entry.tmpl", tmpl)
+	return server.TmplPage(StaticFs, "form_entry.tmpl", tmpl)
 }
 
 // helper function to obtain schema file name from schema name

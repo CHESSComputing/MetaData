@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 
-	srvConfig "github.com/CHESSComputing/common/config"
-	oreMongo "github.com/CHESSComputing/common/mongo"
+	srvConfig "github.com/CHESSComputing/golib/config"
+	oreMongo "github.com/CHESSComputing/golib/mongo"
 	bson "go.mongodb.org/mongo-driver/bson"
 	// bson "gopkg.in/mgo.v2/bson"
 )

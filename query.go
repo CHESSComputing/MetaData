@@ -13,7 +13,7 @@ import (
 	"strconv"
 	"strings"
 
-	utils "github.com/CHESSComputing/common/utils"
+	utils "github.com/CHESSComputing/golib/utils"
 	bson "go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive" // for BSON ObjectID
 )

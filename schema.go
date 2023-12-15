@@ -16,9 +16,9 @@ import (
 	"strings"
 	"time"
 
-	srvConfig "github.com/CHESSComputing/common/config"
-	mongo "github.com/CHESSComputing/common/mongo"
-	utils "github.com/CHESSComputing/common/utils"
+	srvConfig "github.com/CHESSComputing/golib/config"
+	mongo "github.com/CHESSComputing/golib/mongo"
+	utils "github.com/CHESSComputing/golib/utils"
 	yaml "gopkg.in/yaml.v2"
 )
 

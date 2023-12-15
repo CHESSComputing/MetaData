@@ -13,10 +13,10 @@ import (
 	"strings"
 	"time"
 
-	srvConfig "github.com/CHESSComputing/common/config"
-	mongo "github.com/CHESSComputing/common/mongo"
-	server "github.com/CHESSComputing/common/server"
-	utils "github.com/CHESSComputing/common/utils"
+	srvConfig "github.com/CHESSComputing/golib/config"
+	mongo "github.com/CHESSComputing/golib/mongo"
+	server "github.com/CHESSComputing/golib/server"
+	utils "github.com/CHESSComputing/golib/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -160,15 +160,15 @@ func SearchHandler(c *gin.Context) {
 	r := c.Request
 
 	// create search template form
-	tmpl := server.MakeTmpl(c, "Search")
+	tmpl := server.MakeTmpl(StaticFs, "Search")
 
 	// if we got GET request it is /search web form
 	if r.Method == "GET" {
 		tmpl["Query"] = ""
 		tmpl["User"] = user
-		page := utils.TmplPage(StaticFs, "searchform.tmpl", tmpl)
+		page := server.TmplPage(StaticFs, "searchform.tmpl", tmpl)
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(server.Top(c) + page + server.Bottom(c)))
+		w.Write([]byte(header() + page + footer()))
 		return
 	}
 
@@ -180,7 +180,9 @@ func SearchHandler(c *gin.Context) {
 	}
 	if err != nil {
 		msg := "unable to parse user query"
-		server.HandleError(c, msg, err)
+		page := server.ErrorPage(StaticFs, msg, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(header() + page + footer()))
 		return
 	}
 
@@ -205,7 +207,7 @@ func SearchHandler(c *gin.Context) {
 
 	tmpl["Query"] = query
 	tmpl["User"] = user
-	page := utils.TmplPage(StaticFs, "searchform.tmpl", tmpl)
+	page := server.TmplPage(StaticFs, "searchform.tmpl", tmpl)
 
 	// process the query
 	if spec != nil {
@@ -226,7 +228,7 @@ func SearchHandler(c *gin.Context) {
 			tmpl["RecordString"] = rec.ToString()
 			tmpl["Record"] = rec.ToJSON()
 			tmpl["Description"] = fmt.Sprintf("update on %s", time.Now().String())
-			prec := utils.TmplPage(StaticFs, "record.tmpl", tmpl)
+			prec := server.TmplPage(StaticFs, "record.tmpl", tmpl)
 			page = fmt.Sprintf("%s<br>%s", page, prec)
 		}
 		if nrec > 5 {
@@ -234,7 +236,7 @@ func SearchHandler(c *gin.Context) {
 		}
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(server.Top(c) + page + server.Bottom(c)))
+	w.Write([]byte(header() + page + footer()))
 }
 
 // DataHandler provides access to / and /data end-points
@@ -242,7 +244,8 @@ func DataHandler(c *gin.Context) {
 	r := c.Request
 	w := c.Writer
 	user, _ := username(r)
-	tmpl := server.MakeTmpl(c, "Data")
+	tmpl := server.MakeTmpl(StaticFs, "Data")
+	tmpl["Base"] = srvConfig.Config.CHESSMetaData.WebServer.Base
 	tmpl["User"] = user
 	tmpl["Date"] = time.Now().Unix()
 	tmpl["Beamlines"] = _beamlines
@@ -262,13 +265,40 @@ func DataHandler(c *gin.Context) {
 		forms = append(forms, beamlineForm)
 	}
 	tmpl["Form"] = template.HTML(strings.Join(forms, "\n"))
-	page := utils.TmplPage(StaticFs, "keys.tmpl", tmpl)
+	page := server.TmplPage(StaticFs, "keys.tmpl", tmpl)
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(server.Top(c) + page + server.Bottom(c)))
+	w.Write([]byte(header() + page + footer()))
 }
 func UpdateRecordHandler(c *gin.Context) {
 }
 func UploadJsonHandler(c *gin.Context) {
 }
 func ProcessHandler(c *gin.Context) {
+}
+
+// FAQHandler provides content of /faq end-point
+func FAQHandler(c *gin.Context) {
+	w := c.Writer
+	page := server.FAQPage(StaticFs)
+	w.Write([]byte(header() + page + footer()))
+}
+
+// MetricsHandler provides content of /metrics end-point
+func MetricsHandler(c *gin.Context) {
+	w := c.Writer
+	r := c.Request
+	tmpl := server.MetricsPage(StaticFs)
+	mimeTypes, ok := r.Header["Accept"]
+	if ok && utils.InList("application/json", mimeTypes) {
+		data, err := json.Marshal(tmpl)
+		if err != nil {
+			log.Println("ERROR", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.Write(data)
+		return
+	}
+	page := server.TmplPage(StaticFs, "metrics.tmpl", tmpl)
+	w.Write([]byte(header() + page + footer()))
 }
