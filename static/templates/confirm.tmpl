@@ -1,0 +1,13 @@
+<div class="max-75 centered {{.Class}}">
+    <div>SCHEMA: {{.Schema}}</div>
+    <div>{{.Message}}</div>
+</div>
+{{if .JsonRecord }}
+<div class="max-75 centered">
+    <h3>JSON record</h3>
+    <br/>
+    <pre id="json_record" class="hide">{{.JsonRecord}}</pre>
+    <a href="javascript:FlipTag('json_record')" class="button button-small">Show</a>
+    <a href="javascript:SaveRecord()" class="button button-primary button-small">Save</a>
+</div>
+{{end}}

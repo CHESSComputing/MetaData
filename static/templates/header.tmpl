@@ -1,0 +1,82 @@
+<!DOCTYPE HTML>
+<!-- web_top.tmpl -->
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head profile="http://www.w3.org/2005/11/profile">
+    <title>CHESS Data Management System</title>
+
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta http-equiv="Content-Language" content="en-us" />
+    <meta http-equiv="Content-Script-Type" content="text/javascript" />
+    <meta http-equiv="imagetoolbar" content="no" />
+    <meta name="author" content="Valentin Kuznetsov (vkuznet at gmail dot com)" />
+    <meta name="MSSmartTagsPreventParsing" content="true" />
+    <meta name="ROBOTS" content="ALL" />
+    <meta name="Copyright" content="(CC) 2019, CHESS collaboration." />
+    <meta name="Rating" content="General" />
+
+    <link rel="stylesheet" type="text/css" href="{{.Base}}/css/main.css"/>
+    <!-- Kube CSS -->
+    <!--
+    <link rel="stylesheet" href="{{.Base}}/css/kube.min.css">
+    -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/superkube@latest/dist/superkube.min.css">
+
+
+    <script type="text/javascript" src="{{.Base}}/js/utils.js"></script>
+    <script type="text/javascript" src="{{.Base}}/js/ajax_utils.js"></script>
+
+</head>
+<body class="yui-skin-sam">
+
+<div id="banner" class="navbar">
+    <div class="navbar-container">
+    <div class="navbar-brand">
+        <a href="{{.Base}}/">
+            <b class="is-logo">CHESS MetaData Service</b>
+        </a>
+    </div>
+    <div class="navbar-nav flex-auto">
+        <!-- primary navigation -->
+        <nav class="nav nav-centered">
+            <ul class="nav-list">
+            <li class="nav-item">
+                <a id="web_top_search" href="{{.Base}}/search">
+                    <b>Search</b>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a id="web_top_status" href="{{.Base}}/status">
+                    <b>Status</b>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a id="web_top_faq" href="{{.Base}}/faq">
+                    <b>FAQ</b>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a id="web_top_bug" href="https://github.com/vkuznet/ChessDataManagement/issues">
+                    <b>Bug report</b>
+                </a>
+            </li>
+            </ul>
+        </nav>
+    </div>
+    <div class="navbar-action">
+        <!-- secondary navigation -->
+        <nav class="nav nav-right">
+            <ul class="nav-list">
+                <!-- auth-session is defined in code -->
+                <!-- once logout redirect to home page -->
+                <li class="nav-item">
+                    <a href="javascript:deleteCookie('auth-session');load('/');">
+                        <b>Logout</b>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    </div>
+</div>
+
+<!-- end of web_top.tmpl -->

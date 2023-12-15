@@ -1,0 +1,19 @@
+<h3>record: {{.Id}}</h3>
+<div class="max-75 centered">
+    <form method="post" action="{{.Base}}/updateRecord">
+    <div class="form-item">
+        <input name="_id" type="hidden" value="{{.Id}}">
+        <input type="hidden" name="User" value="{{.User}}"/>
+        <input type="hidden" name="Description" value="{{.Description}}"/>
+    </div>
+{{range $i, $input := .Inputs}}
+    <div class="form-item">
+        {{$input}}
+    </div>
+{{end}}
+
+    <div class="form-item is-buttons">
+        <button class="button">Update</button>
+    </div>
+</form>
+</div>
