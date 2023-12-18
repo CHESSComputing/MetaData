@@ -14,9 +14,11 @@ import (
 	"strings"
 	"time"
 
+	beamlines "github.com/CHESSComputing/golib/beamlines"
 	srvConfig "github.com/CHESSComputing/golib/config"
 	mongo "github.com/CHESSComputing/golib/mongo"
 	server "github.com/CHESSComputing/golib/server"
+	services "github.com/CHESSComputing/golib/services"
 	utils "github.com/CHESSComputing/golib/utils"
 	"github.com/gin-gonic/gin"
 	bson "go.mongodb.org/mongo-driver/bson"
@@ -99,8 +101,8 @@ func parseSpec(c *gin.Context) (mongo.Record, error) {
 }
 
 // helper function to parse input HTTP request JSON data
-func parseRequest(c *gin.Context) (server.MetaRecord, error) {
-	var rec server.MetaRecord
+func parseRequest(c *gin.Context) (services.MetaRecord, error) {
+	var rec services.MetaRecord
 	defer c.Request.Body.Close()
 	body, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
@@ -129,7 +131,7 @@ func DataHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": errors.New(msg), "status": "fail"})
 		return
 	}
-	schema := server.SchemaFileName(sname)
+	schema := beamlines.SchemaFileName(sname)
 	record := rec.Record
 	if Verbose > 0 {
 		log.Printf("insert schema=%s record=%+v", schema, record)
