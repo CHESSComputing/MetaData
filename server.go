@@ -60,22 +60,11 @@ func setupRouter() *gin.Engine {
 	// gin.DisableConsoleColor()
 	r := gin.Default()
 
-	// GET routes
-	r.GET("/meta", MetaHandler)
-	r.GET("/meta/record/:mid", MetaRecordHandler)
-	r.GET("/meta/:site", MetaSiteHandler)
-
 	// CHESSDataManagement APIs
-	r.GET(base("/faq"), FAQHandler)
-	r.GET(base("/status"), MetricsHandler)
-	r.GET(base("/metrics"), MetricsHandler)
 	r.GET(base("/schemas"), SchemasHandler)
-	r.GET(base("/data"), DataHandler)
 	r.GET(base("/process"), ProcessHandler)
 
 	// TMP: until I implement tokens in client
-	r.GET(base("/search"), SearchHandler)
-	r.POST(base("/search"), SearchHandler)
 	r.POST(base("/updateRecord"), UpdateRecordHandler)
 	r.POST(base("/json"), UploadJsonHandler)
 	// end of TMP
@@ -84,15 +73,13 @@ func setupRouter() *gin.Engine {
 	authorized := r.Group("/")
 	authorized.Use(authz.TokenMiddleware(srvConfig.Config.Authz.ClientID, Verbose))
 	{
-		//         authorized.POST(base("/updateRecord"), UpdateRecordHandler)
-		//         authorized.POST(base("/json"), UploadJsonHandler)
-		//         authorized.POST(base("/search"), SearchHandler)
-		//         authorized.GET(base("/search"), SearchHandler)
-		authorized.POST("/meta", MetaPostHandler)
-		authorized.DELETE("/meta/:mid", MetaDeleteHandler)
+		// data-service APIs
+		authorized.GET("/:did", RecordHandler)
+		authorized.PUT("/", UpdateHandler)
+		authorized.POST("/", DataHandler)
+		authorized.POST("/search", QueryHandler)
+		authorized.DELETE("/:did", DeleteHandler)
 	}
-
-	r.GET(base("/"), DataHandler)
 
 	// static files
 	for _, dir := range []string{"js", "css", "images", "templates"} {

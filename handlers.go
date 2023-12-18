@@ -1,11 +1,12 @@
 package main
 
 import (
-	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html/template"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -18,93 +19,20 @@ import (
 	server "github.com/CHESSComputing/golib/server"
 	utils "github.com/CHESSComputing/golib/utils"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	bson "go.mongodb.org/mongo-driver/bson"
 )
 
-// SiteParams represents URI storage params in /meta/:site end-point
-type SiteParams struct {
-	Site string `uri:"site" binding:"required"`
+// MetaParams represents URI storage params in /did end-point
+type MetaParams struct {
+	DID int64 `uri:"did" binding:"required"`
 }
 
-// MetaIdParams represents URI storage params in /meta/:mid end-point
-type MetaIdParams struct {
-	ID string `uri:"mid" binding:"required"`
-}
-
-// MetaHandler provives access to GET /meta end-point
-func MetaHandler(c *gin.Context) {
-	data := metadata("")
-	c.JSON(200, gin.H{"status": "ok", "data": data})
-}
-
-// MetaSiteHandler provides access to GET /meta/:site end-point
-func MetaSiteHandler(c *gin.Context) {
-	var params SiteParams
-	if err := c.ShouldBindUri(&params); err == nil {
-		data := metadata(params.Site)
-		c.JSON(200, gin.H{"status": "ok", "data": data})
-	} else {
-		c.JSON(400, gin.H{"status": "fail", "error": err.Error()})
-	}
-}
-
-// MetaRecordHandler provides access to GET /meta/:site end-point
-func MetaRecordHandler(c *gin.Context) {
-	var params MetaIdParams
-	if err := c.ShouldBindUri(&params); err == nil {
-		data := getRecord(params.ID)
-		c.JSON(200, gin.H{"status": "ok", "data": data})
-	} else {
-		c.JSON(400, gin.H{"status": "fail", "error": err.Error()})
-	}
-}
-
-// MetaPostHandler provides access to POST /meta end-point
-func MetaPostHandler(c *gin.Context) {
-	var meta MetaData
-	err := c.BindJSON(&meta)
-	if err == nil {
-		if meta.ID == "" {
-			if uuid, err := uuid.NewRandom(); err == nil {
-				meta.ID = hex.EncodeToString(uuid[:])
-			}
-		}
-		_metaData = append(_metaData, meta)
-		// upsert into MongoDB
-		if srvConfig.Config.CHESSMetaData.MongoDB.DBUri != "" {
-			//         meta.mongoUpsert("ID")
-			meta.mongoInsert()
-		}
-		c.JSON(200, gin.H{"status": "ok"})
-	} else {
-		c.JSON(400, gin.H{"status": "fail", "error": err.Error()})
-	}
-}
-
-// MetaDeleteHandler provides access to Delete /meta/:mid end-point
-func MetaDeleteHandler(c *gin.Context) {
-	var params MetaIdParams
-	if err := c.ShouldBindUri(&params); err == nil {
-		var metaData []MetaData
-		for _, meta := range _metaData {
-			if meta.ID != params.ID {
-				metaData = append(metaData, meta)
-				// remove record from MongoDB
-				meta.mongoRemove()
-			}
-		}
-		if len(_metaData) == len(metaData) {
-			// record was not found
-			msg := fmt.Sprintf("record %s was not found in MetaData service", params.ID)
-			c.JSON(400, gin.H{"status": "fail", "error": msg})
-			return
-		}
-		_metaData = metaData
-		c.JSON(200, gin.H{"status": "ok"})
-	} else {
-		c.JSON(400, gin.H{"status": "fail", "error": err.Error()})
-	}
+// helper function to provide error page
+func handleError(c *gin.Context, msg string, err error) {
+	page := server.ErrorPage(StaticFs, msg, err)
+	w := c.Writer
+	w.WriteHeader(http.StatusInternalServerError)
+	w.Write([]byte(header() + page + footer()))
 }
 
 // CHESSDataManagement APIs
@@ -132,130 +60,183 @@ func SchemasHandler(c *gin.Context) {
 		srec["records"] = rec
 		records = append(records, srec)
 	}
-	c.JSON(200, records)
+	c.JSON(http.StatusOK, records)
 }
 
-// SearchHandler handlers Search requests
-func SearchHandler(c *gin.Context) {
-	var err error
-	var user string
-	/*
-		if Config.TestMode {
-			user = "test"
-			err = nil
-		} else {
-			user, err = username(r)
-		}
-		if err != nil {
-			_, err := getUserCredentials(r)
-			if err != nil {
-				msg := "unable to get user credentials"
-				handleError(w, r, msg, err)
-				return
-			}
-		}
-	*/
-
-	w := c.Writer
-	r := c.Request
-
-	// create search template form
-	tmpl := server.MakeTmpl(StaticFs, "Search")
-
-	// if we got GET request it is /search web form
-	if r.Method == "GET" {
-		tmpl["Query"] = ""
-		tmpl["User"] = user
-		page := server.TmplPage(StaticFs, "searchform.tmpl", tmpl)
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(header() + page + footer()))
+// RecordHandler handles POST queries
+func RecordHandler(c *gin.Context) {
+	var params MetaParams
+	err := c.ShouldBindUri(&params)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "fail", "error": err.Error()})
 		return
 	}
+	var records []mongo.Record
+	spec := bson.M{"did": params.DID}
+	records = mongo.Get(srvConfig.Config.CHESSMetaData.DBName, srvConfig.Config.CHESSMetaData.DBColl, spec, 0, -1)
+	if Verbose > 0 {
+		log.Println("RecordHandler", spec, records)
+	}
+	c.JSON(http.StatusOK, records)
+}
 
-	// if we get POST request we'll process user query
-	query := r.FormValue("query")
+// helper function to parse input HTTP request JSON spec data
+func parseSpec(c *gin.Context) (mongo.Record, error) {
+	var rec mongo.Record
+	defer c.Request.Body.Close()
+	body, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		return rec, err
+	}
+	err = json.Unmarshal(body, &rec)
+	if err != nil {
+		return rec, err
+	}
+	if Verbose > 0 {
+		log.Printf("QueryHandler received request %+v", rec)
+	}
+	return rec, nil
+}
+
+// helper function to parse input HTTP request JSON data
+func parseRequest(c *gin.Context) (server.MetaRecord, error) {
+	var rec server.MetaRecord
+	defer c.Request.Body.Close()
+	body, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		return rec, err
+	}
+	err = json.Unmarshal(body, &rec)
+	if err != nil {
+		return rec, err
+	}
+	if Verbose > 0 {
+		log.Printf("QueryHandler received request %+v", rec)
+	}
+	return rec, nil
+}
+
+// DataHandler handles POST upload of meta-data record
+func DataHandler(c *gin.Context) {
+	rec, err := parseRequest(c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "status": "fail"})
+		return
+	}
+	sname := rec.Schema
+	if sname == "" {
+		msg := "No schema found in meta-data record"
+		c.JSON(http.StatusBadRequest, gin.H{"error": errors.New(msg), "status": "fail"})
+		return
+	}
+	schema := server.SchemaFileName(sname)
+	record := rec.Record
+	if Verbose > 0 {
+		log.Printf("insert schema=%s record=%+v", schema, record)
+	}
+	// insert record to meta-data database
+	err = insertData(schema, record)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "status": "fail"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "ok"})
+}
+
+// QueryHandler handles POST queries
+func QueryHandler(c *gin.Context) {
+	rec, err := parseSpec(c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "status": "fail"})
+		return
+	}
+	query := fmt.Sprintf("%v", rec["query"])
+	user := fmt.Sprintf("%v", rec["user"])
 	spec, err := ParseQuery(query)
 	if Verbose > 0 {
 		log.Printf("search query='%s' spec=%+v user=%v", query, spec, user)
 	}
 	if err != nil {
-		msg := "unable to parse user query"
-		page := server.ErrorPage(StaticFs, msg, err)
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(header() + page + footer()))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "status": "fail"})
 		return
 	}
 
-	// check if we use web or cli
-	if client := r.FormValue("client"); client == "cli" {
-		var records []mongo.Record
-		if spec != nil {
-			records = mongo.Get(srvConfig.Config.CHESSMetaData.DBName, srvConfig.Config.CHESSMetaData.DBColl, spec, 0, -1)
-		}
-		c.JSON(200, records)
-		return
-	}
-	// get form parameters
-	limit, err := strconv.Atoi(r.FormValue("limit"))
-	if err != nil {
-		limit = 50
-	}
-	idx, err := strconv.Atoi(r.FormValue("idx"))
-	if err != nil {
-		idx = 0
-	}
-
-	tmpl["Query"] = query
-	tmpl["User"] = user
-	page := server.TmplPage(StaticFs, "searchform.tmpl", tmpl)
-
-	// process the query
+	var records []mongo.Record
 	if spec != nil {
-		nrec := mongo.Count(srvConfig.Config.CHESSMetaData.DBName, srvConfig.Config.CHESSMetaData.DBColl, spec)
-		records := mongo.Get(srvConfig.Config.CHESSMetaData.DBName, srvConfig.Config.CHESSMetaData.DBColl, spec, 0, -1)
-		var pager string
-		if nrec > 0 {
-			pager = pagination(c, query, nrec, idx, limit)
-			page = fmt.Sprintf("%s<br><br>%s", page, pager)
-		} else {
-			page = fmt.Sprintf("%s<br><br>No results found</br>", page)
-		}
-		for _, rec := range records {
-			oid := rec["_id"].(primitive.ObjectID)
-			rec["_id"] = oid
-			tmpl["Id"] = oid.Hex()
-			tmpl["Did"] = rec["did"]
-			tmpl["RecordString"] = rec.ToString()
-			tmpl["Record"] = rec.ToJSON()
-			tmpl["Description"] = fmt.Sprintf("update on %s", time.Now().String())
-			prec := server.TmplPage(StaticFs, "record.tmpl", tmpl)
-			page = fmt.Sprintf("%s<br>%s", page, prec)
-		}
-		if nrec > 5 {
-			page = fmt.Sprintf("%s<br><br>%s", page, pager)
-		}
+		records = mongo.Get(srvConfig.Config.CHESSMetaData.DBName, srvConfig.Config.CHESSMetaData.DBColl, spec, 0, -1)
 	}
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(header() + page + footer()))
+	c.JSON(http.StatusOK, records)
 }
 
-// DataHandler provides access to / and /data end-points
-func DataHandler(c *gin.Context) {
+// DeleteHandler handles POST queries
+func DeleteHandler(c *gin.Context) {
+}
+
+// UploadJsonHandler handles upload of JSON record
+func UploadJsonHandler(c *gin.Context) {
 	r := c.Request
 	w := c.Writer
+
+	// get beamline value from the form
+	sname := r.FormValue("SchemaName")
+
+	// read form file
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		msg := "unable to read file form"
+		handleError(c, msg, err)
+		return
+	}
+	defer file.Close()
+
+	defer r.Body.Close()
+	body, err := ioutil.ReadAll(file)
+	var rec mongo.Record
+	if err == nil {
+		err = json.Unmarshal(body, &rec)
+		if err != nil {
+			log.Println("unable to read HTTP JSON record, error:", err)
+		}
+	}
 	user, _ := username(r)
-	tmpl := server.MakeTmpl(StaticFs, "Data")
-	tmpl["Base"] = srvConfig.Config.CHESSMetaData.WebServer.Base
+	tmpl := server.MakeTmpl(StaticFs, "Upload")
 	tmpl["User"] = user
 	tmpl["Date"] = time.Now().Unix()
-	tmpl["Beamlines"] = _beamlines
+	schemaFiles := srvConfig.Config.CHESSMetaData.SchemaFiles
+	if sname != "" {
+		// construct proper schema files order which will be used to generate forms
+		sfiles := []string{}
+		// add scheme file which matches our desired schema
+		for _, f := range schemaFiles {
+			if strings.Contains(f, sname) {
+				sfiles = append(sfiles, f)
+			}
+		}
+		// add rest of schema files
+		for _, f := range schemaFiles {
+			if !strings.Contains(f, sname) {
+				sfiles = append(sfiles, f)
+			}
+		}
+		schemaFiles = sfiles
+		// construct proper bemalines order
+		blines := []string{sname}
+		for _, b := range _beamlines {
+			if b != sname {
+				blines = append(blines, b)
+			}
+		}
+		tmpl["Beamlines"] = blines
+	} else {
+		tmpl["Beamlines"] = _beamlines
+	}
 	var forms []string
-	for idx, fname := range srvConfig.Config.CHESSMetaData.SchemaFiles {
+	for idx, fname := range schemaFiles {
 		cls := "hide"
 		if idx == 0 {
 			cls = ""
 		}
-		form, err := genForm(c, fname, nil)
+		form, err := genForm(c, fname, &rec)
 		if err != nil {
 			log.Println("ERROR", err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -266,39 +247,313 @@ func DataHandler(c *gin.Context) {
 	}
 	tmpl["Form"] = template.HTML(strings.Join(forms, "\n"))
 	page := server.TmplPage(StaticFs, "keys.tmpl", tmpl)
-	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(header() + page + footer()))
 }
-func UpdateRecordHandler(c *gin.Context) {
-}
-func UploadJsonHandler(c *gin.Context) {
-}
+
+// ProcessHandler handlers Process requests
 func ProcessHandler(c *gin.Context) {
-}
-
-// FAQHandler provides content of /faq end-point
-func FAQHandler(c *gin.Context) {
-	w := c.Writer
-	page := server.FAQPage(StaticFs)
-	w.Write([]byte(header() + page + footer()))
-}
-
-// MetricsHandler provides content of /metrics end-point
-func MetricsHandler(c *gin.Context) {
-	w := c.Writer
 	r := c.Request
-	tmpl := server.MetricsPage(StaticFs)
-	mimeTypes, ok := r.Header["Accept"]
-	if ok && utils.InList("application/json", mimeTypes) {
-		data, err := json.Marshal(tmpl)
+	w := c.Writer
+	var msg string
+	var class string
+	tmpl := server.MakeTmpl(StaticFs, "Process")
+	user, _ := username(r)
+	tmpl["User"] = user
+	if err := r.ParseForm(); err == nil {
+		schema, rec, err := processForm(r)
+		// save parsed record for later usage
+		if data, e := json.MarshalIndent(rec, "", "   "); e == nil {
+			tmpl["JsonRecord"] = template.HTML(string(data))
+		}
 		if err != nil {
-			log.Println("ERROR", err)
-			w.WriteHeader(http.StatusInternalServerError)
+			msg = fmt.Sprintf("Web processing error: %v", err)
+			class = "alert alert-error"
+			tmpl["Message"] = msg
+			tmpl["Class"] = class
+			page := server.TmplPage(StaticFs, "confirm.tmpl", tmpl)
+			w.Write([]byte(header() + page + footer()))
 			return
 		}
-		w.Write(data)
+		err = insertData(schema, rec)
+		if err == nil {
+			msg = fmt.Sprintf("Your meta-data is inserted successfully")
+			log.Println("INFO", msg)
+			class = "alert alert-success"
+		} else {
+			//             msg = fmt.Sprintf("Web processing error: %v", err)
+			msg = fmt.Sprintf("ERROR: %v", err)
+			class = "alert alert-error"
+			log.Println("WARNING", msg)
+			tmpl["Schema"] = schemaName(schema)
+			tmpl["Message"] = msg
+			tmpl["Class"] = class
+			page := server.TmplPage(StaticFs, "confirm.tmpl", tmpl)
+			// redirect users to update their record
+			inputs := htmlInputs(rec)
+			tmpl["Inputs"] = inputs
+			tmpl["Id"] = ""
+			tmpl["Description"] = fmt.Sprintf("update on %s", time.Now().String())
+			page += server.TmplPage(StaticFs, "update.tmpl", tmpl)
+			w.Write([]byte(header() + page + footer()))
+			return
+		}
+	}
+	tmpl["Message"] = msg
+	tmpl["Class"] = class
+	page := server.TmplPage(StaticFs, "confirm.tmpl", tmpl)
+	w.Write([]byte(header() + page + footer()))
+}
+
+// APIHandler handlers Api requests
+func APIHandler(c *gin.Context) {
+	w := c.Writer
+	r := c.Request
+
+	// read schema name from web form
+	var schema string
+	sname := r.FormValue("SchemaName")
+	if sname != "" {
+		schema = schemaFileName(sname)
+	} else { // we got CLI request
+		if items, ok := r.URL.Query()["schema"]; ok {
+			sname = items[0]
+		}
+	}
+	if sname == "" {
+		msg := "client does not provide schema name"
+		handleError(c, msg, errors.New("Bad request"))
 		return
 	}
-	page := server.TmplPage(StaticFs, "metrics.tmpl", tmpl)
+	if Verbose > 0 {
+		log.Printf("APIHandler schema=%s, file=%s", sname, schema)
+	}
+
+	user, err := userCredentials(r)
+	if err != nil {
+		msg := "unable to get user credentials"
+		handleError(c, msg, err)
+		return
+	}
+	if !srvConfig.Config.CHESSMetaData.TestMode {
+
+		// check if we got request from CLI, we proceed here only for web clients
+		userAgent := r.Header.Get("User-Agent")
+		if !strings.Contains(userAgent, "Go-http-client") {
+			config := r.FormValue("config")
+			var data = mongo.Record{}
+			data["User"] = user
+			err = json.Unmarshal([]byte(config), &data)
+			if err != nil {
+				msg := "unable to unmarshal configuration data"
+				handleError(c, msg, err)
+				return
+			}
+			err = insertData(schema, data)
+			if err != nil {
+				msg := "unable to insert data"
+				handleError(c, msg, err)
+				return
+			}
+			msg := fmt.Sprintf("Successfully inserted:\n%v", data.ToString())
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(msg))
+			return
+		}
+	}
+
+	// our data record
+	var data = mongo.Record{}
+	data["User"] = user
+
+	// process cli request
+	record := r.FormValue("record")
+	if record != "" {
+		err := json.Unmarshal([]byte(record), &data)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "status": "fail"})
+			return
+		}
+		err = insertData(schema, data)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "status": "fail"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+		return
+	}
+
+	// process web form
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		msg := "unable to read file form"
+		handleError(c, msg, err)
+		return
+	}
+	defer file.Close()
+
+	var msg, class string
+	defer r.Body.Close()
+	body, err := io.ReadAll(file)
+	if err != nil {
+		msg = fmt.Sprintf("error: %v, unable to read request data", err)
+		class = "alert alert-error"
+	} else {
+		log.Println("body", string(body))
+		err := json.Unmarshal(body, &data)
+		if err != nil {
+			msg = fmt.Sprintf("error: %v, unable to parse request data", err)
+			class = "alert alert-error"
+		} else {
+			err := insertData(schema, data)
+			if err == nil {
+				msg = fmt.Sprintf("meta-data is inserted successfully")
+				class = "alert alert-success"
+			} else {
+				msg = fmt.Sprintf("ERROR: %v", err)
+				class = "alert alert-error"
+			}
+		}
+	}
+	tmpl := server.MakeTmpl(StaticFs, "Api")
+	tmpl["Schema"] = schemaName(schema)
+	tmpl["Message"] = msg
+	tmpl["Class"] = class
+	page := server.TmplPage(StaticFs, "confirm.tmpl", tmpl)
+	w.Write([]byte(header() + page + footer()))
+}
+
+// UpdateHandler handlers Process requests
+func UpdateHandler(c *gin.Context) {
+	r := c.Request
+	w := c.Writer
+	tmpl := server.MakeTmpl(StaticFs, "Update")
+	record := r.FormValue("record")
+	var rec mongo.Record
+	err := json.Unmarshal([]byte(record), &rec)
+	if err != nil {
+		msg := "unable to unmarshal passed record"
+		handleError(c, msg, err)
+		return
+	}
+	// we will prepare input entries for the template
+	// where each entry represented in form of template.HTML
+	// to avoid escaping of HTML characters
+	inputs := htmlInputs(rec)
+	tmpl["Inputs"] = inputs
+	tmpl["Id"] = r.FormValue("_id")
+	tmpl["Description"] = fmt.Sprintf("update on %s", time.Now().String())
+	page := server.TmplPage(StaticFs, "update.tmpl", tmpl)
+	w.Write([]byte(header() + page + footer()))
+}
+
+// UpdateRecordHandler handlers Process requests
+func UpdateRecordHandler(c *gin.Context) {
+	r := c.Request
+	w := c.Writer
+	tmpl := server.MakeTmpl(StaticFs, "UpdateRecord")
+	user, _ := username(r)
+	tmpl["User"] = user
+	var msg, cls, schema string
+	var rec mongo.Record
+	if err := r.ParseForm(); err == nil {
+		schema, rec, err = processForm(r)
+		if err != nil {
+			msg := fmt.Sprintf("Web processing error: %v", err)
+			class := "alert alert-error"
+			tmpl["Message"] = msg
+			tmpl["Class"] = class
+			page := server.TmplPage(StaticFs, "confirm.tmpl", tmpl)
+			w.Write([]byte(header() + page + footer()))
+			return
+		}
+		rid := r.FormValue("_id")
+		// delete record id before the update
+		delete(rec, "_id")
+		if rid == "" {
+			err := insertData(schema, rec)
+			if err == nil {
+				msg = fmt.Sprintf("Your meta-data is inserted successfully")
+				cls = "alert alert-success"
+			} else {
+				//                 msg = fmt.Sprintf("update web processing error: %v", err)
+				msg = fmt.Sprintf("ERROR: %v", err)
+				cls = "alert alert-error"
+			}
+		} else {
+			msg = fmt.Sprintf("record %v is successfully updated", rid)
+			log.Println("MongoUpsert", rec)
+			records := []mongo.Record{rec}
+			err = mongo.Upsert(
+				srvConfig.Config.CHESSMetaData.MongoDB.DBName,
+				srvConfig.Config.CHESSMetaData.MongoDB.DBColl,
+				"dataset", records)
+			if err != nil {
+				msg = fmt.Sprintf("record %v update is failed, reason: %v", rid, err)
+				cls = "alert-error"
+			} else {
+				cls = "alert-success"
+			}
+		}
+	} else {
+		msg = fmt.Sprintf("record update failed, reason: %v", err)
+		cls = "alert-error"
+	}
+	tmpl["Schema"] = schemaName(schema)
+	tmpl["Message"] = strings.ToTitle(msg)
+	tmpl["Class"] = fmt.Sprintf("alert %s text-large centered", cls)
+	page := server.TmplPage(StaticFs, "confirm.tmpl", tmpl)
+	w.Write([]byte(header() + page + footer()))
+}
+
+// FilesHandler handlers Files requests
+func FilesHandler(c *gin.Context) {
+	r := c.Request
+	w := c.Writer
+	_, err := userCredentials(r)
+	if err != nil {
+		msg := "unable to get user credentials"
+		handleError(c, msg, err)
+		return
+	}
+	if !srvConfig.Config.CHESSMetaData.TestMode && err != nil {
+		did, err := strconv.ParseInt(r.FormValue("did"), 10, 64)
+		if err != nil {
+			msg := fmt.Sprintf("Unable to parse did\nError: %v", err)
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(msg))
+			return
+		}
+		files, err := getFiles(did)
+		if err != nil {
+			msg := fmt.Sprintf("Unable to get files\nError: %v", err)
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(msg))
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(strings.Join(files, "\n")))
+		return
+	}
+	tmpl := server.MakeTmpl(StaticFs, "Files")
+	did, err := strconv.ParseInt(r.FormValue("did"), 10, 64)
+	if err != nil {
+		tmpl["Message"] = fmt.Sprintf("Unable to parse did\nError: %v", err)
+		tmpl["Class"] = "alert alert-error text-large centered"
+		page := server.TmplPage(StaticFs, "confirm.tmpl", tmpl)
+		w.Write([]byte(header() + page + footer()))
+		return
+	}
+	files, err := getFiles(did)
+	if err != nil {
+		tmpl["Message"] = fmt.Sprintf("Unable to query FilesDB\nError: %v", err)
+		tmpl["Class"] = "alert alert-error text-large centered"
+		page := server.TmplPage(StaticFs, "confirm.tmpl", tmpl)
+		w.Write([]byte(header() + page + footer()))
+		return
+	}
+	tmpl["Id"] = r.FormValue("_id")
+	tmpl["Did"] = did
+	tmpl["Files"] = strings.Join(files, "\n")
+	page := server.TmplPage(StaticFs, "files.tmpl", tmpl)
 	w.Write([]byte(header() + page + footer()))
 }

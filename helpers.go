@@ -17,6 +17,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// helper function to return user credentials form HTTP request
+func userCredentials(r *http.Request) (string, error) {
+	if srvConfig.Config.CHESSMetaData.TestMode {
+		return "test", nil
+	}
+	// TODO: I need to decide how to do it
+	return "TestUser", nil
+	// return authz.UserCredentials(r)
+}
+
 // helper function to extract username from auth-session cookie
 func username(r *http.Request) (string, error) {
 	if srvConfig.Config.CHESSMetaData.TestMode {
@@ -62,7 +72,7 @@ func pagination(c *gin.Context, query string, nres, startIdx, limit int) string 
 	tmpl["PrevUrl"] = makeURL(url, "prev", startIdx, limit, nres)
 	tmpl["NextUrl"] = makeURL(url, "next", startIdx, limit, nres)
 	tmpl["LastUrl"] = makeURL(url, "last", startIdx, limit, nres)
-	page := server.TmplPage(StaticFs, "pagiantion.tmpl", tmpl)
+	page := server.TmplPage(StaticFs, "pagination.tmpl", tmpl)
 	return fmt.Sprintf("%s<br>", page)
 }
 
