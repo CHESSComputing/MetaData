@@ -181,10 +181,13 @@ func QueryHandler(c *gin.Context) {
 		nrecords = mongo.Count(srvConfig.Config.CHESSMetaData.DBName, srvConfig.Config.CHESSMetaData.DBColl, spec)
 		records = mongo.Get(srvConfig.Config.CHESSMetaData.DBName, srvConfig.Config.CHESSMetaData.DBColl, spec, idx, limit)
 	}
+	response := services.MetaResponse{
+		Query: query, Spec: spec, Idx: idx, Limit: limit, NRecords: nrecords, Records: records,
+	}
 	if Verbose > 0 {
 		log.Printf("spec %v nrecords %d return idx=%d limit=%d", spec, nrecords, idx, limit)
 	}
-	c.JSON(http.StatusOK, records)
+	c.JSON(http.StatusOK, response)
 }
 
 // DeleteHandler handles POST queries
