@@ -70,7 +70,8 @@ func RecordHandler(c *gin.Context) {
 	var params MetaParams
 	err := c.ShouldBindUri(&params)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "fail", "error": err.Error()})
+		rec := services.Response("MetaData", http.StatusBadRequest, services.BindError, err)
+		c.JSON(http.StatusBadRequest, rec)
 		return
 	}
 	var records []mongo.Record
@@ -122,13 +123,15 @@ func parseRequest(c *gin.Context) (services.MetaRecord, error) {
 func DataHandler(c *gin.Context) {
 	rec, err := parseRequest(c)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "status": "fail"})
+		rec := services.Response("MetaData", http.StatusInternalServerError, services.ParseError, err)
+		c.JSON(http.StatusInternalServerError, rec)
 		return
 	}
 	sname := rec.Schema
 	if sname == "" {
-		msg := "No schema found in meta-data record"
-		c.JSON(http.StatusBadRequest, gin.H{"error": errors.New(msg), "status": "fail"})
+		err := errors.New("No schema found in meta-data record")
+		rec := services.Response("MetaData", http.StatusBadRequest, services.SchemaError, err)
+		c.JSON(http.StatusBadRequest, rec)
 		return
 	}
 	schema := beamlines.SchemaFileName(sname)
@@ -139,7 +142,8 @@ func DataHandler(c *gin.Context) {
 	// insert record to meta-data database
 	err = insertData(schema, record)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "status": "fail"})
+		rec := services.Response("MetaData", http.StatusInternalServerError, services.InsertError, err)
+		c.JSON(http.StatusInternalServerError, rec)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
@@ -149,7 +153,8 @@ func DataHandler(c *gin.Context) {
 func QueryHandler(c *gin.Context) {
 	rec, err := parseSpec(c)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "status": "fail"})
+		rec := services.Response("MetaData", http.StatusInternalServerError, services.ParseError, err)
+		c.JSON(http.StatusInternalServerError, rec)
 		return
 	}
 	query := fmt.Sprintf("%v", rec["query"])
@@ -171,7 +176,8 @@ func QueryHandler(c *gin.Context) {
 		log.Printf("search query='%s' spec=%+v user=%v", query, spec, user)
 	}
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "status": "fail"})
+		rec := services.Response("MetaData", http.StatusInternalServerError, services.ParseError, err)
+		c.JSON(http.StatusInternalServerError, rec)
 		return
 	}
 
@@ -181,12 +187,14 @@ func QueryHandler(c *gin.Context) {
 		nrecords = mongo.Count(srvConfig.Config.CHESSMetaData.DBName, srvConfig.Config.CHESSMetaData.DBColl, spec)
 		records = mongo.Get(srvConfig.Config.CHESSMetaData.DBName, srvConfig.Config.CHESSMetaData.DBColl, spec, idx, limit)
 	}
-	response := services.MetaResponse{
+	response := services.ServiceResponse{
 		Query: query, Spec: spec, Idx: idx, Limit: limit, NRecords: nrecords, Records: records,
 	}
 	if Verbose > 0 {
 		log.Printf("spec %v nrecords %d return idx=%d limit=%d", spec, nrecords, idx, limit)
 	}
+	r := services.Response("MetaData", http.StatusOK, services.OK, nil)
+	r.Response = response
 	c.JSON(http.StatusOK, response)
 }
 
@@ -392,12 +400,14 @@ func APIHandler(c *gin.Context) {
 	if record != "" {
 		err := json.Unmarshal([]byte(record), &data)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "status": "fail"})
+			rec := services.Response("MetaData", http.StatusInternalServerError, services.UnmarshalError, err)
+			c.JSON(http.StatusInternalServerError, rec)
 			return
 		}
 		err = insertData(schema, data)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "status": "fail"})
+			rec := services.Response("MetaData", http.StatusInternalServerError, services.InsertError, err)
+			c.JSON(http.StatusInternalServerError, rec)
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
