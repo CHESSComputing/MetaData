@@ -195,7 +195,7 @@ func QueryHandler(c *gin.Context) {
 	}
 	r := services.Response("MetaData", http.StatusOK, services.OK, nil)
 	r.Response = response
-	c.JSON(http.StatusOK, response)
+	c.JSON(http.StatusOK, r)
 }
 
 // DeleteHandler handles POST queries
