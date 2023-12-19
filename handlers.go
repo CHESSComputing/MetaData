@@ -154,6 +154,18 @@ func QueryHandler(c *gin.Context) {
 	}
 	query := fmt.Sprintf("%v", rec["query"])
 	user := fmt.Sprintf("%v", rec["user"])
+	idx := 0
+	limit := 10
+	if val, ok := rec["idx"]; ok {
+		if v, err := strconv.Atoi(fmt.Sprintf("%v", val)); err == nil {
+			idx = v
+		}
+	}
+	if val, ok := rec["limit"]; ok {
+		if v, err := strconv.Atoi(fmt.Sprintf("%v", val)); err == nil {
+			limit = v
+		}
+	}
 	spec, err := ParseQuery(query)
 	if Verbose > 0 {
 		log.Printf("search query='%s' spec=%+v user=%v", query, spec, user)
@@ -164,8 +176,13 @@ func QueryHandler(c *gin.Context) {
 	}
 
 	var records []mongo.Record
+	nrecords := 0
 	if spec != nil {
-		records = mongo.Get(srvConfig.Config.CHESSMetaData.DBName, srvConfig.Config.CHESSMetaData.DBColl, spec, 0, -1)
+		nrecords = mongo.Count(srvConfig.Config.CHESSMetaData.DBName, srvConfig.Config.CHESSMetaData.DBColl, spec)
+		records = mongo.Get(srvConfig.Config.CHESSMetaData.DBName, srvConfig.Config.CHESSMetaData.DBColl, spec, idx, limit)
+	}
+	if Verbose > 0 {
+		log.Printf("spec %v nrecords %d return idx=%d limit=%d", spec, nrecords, idx, limit)
 	}
 	c.JSON(http.StatusOK, records)
 }
