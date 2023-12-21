@@ -187,14 +187,12 @@ func QueryHandler(c *gin.Context) {
 		nrecords = mongo.Count(srvConfig.Config.CHESSMetaData.DBName, srvConfig.Config.CHESSMetaData.DBColl, spec)
 		records = mongo.Get(srvConfig.Config.CHESSMetaData.DBName, srvConfig.Config.CHESSMetaData.DBColl, spec, idx, limit)
 	}
-	response := services.ServiceResponse{
-		Query: query, Spec: spec, Idx: idx, Limit: limit, NRecords: nrecords, Records: records,
-	}
 	if Verbose > 0 {
 		log.Printf("spec %v nrecords %d return idx=%d limit=%d", spec, nrecords, idx, limit)
 	}
 	r := services.Response("MetaData", http.StatusOK, services.OK, nil)
-	r.Response = response
+	r.Query = services.ServiceQuery{Query: query, Spec: spec, Idx: idx, Limit: limit}
+	r.Results = services.ServiceResults{NRecords: nrecords, Records: records}
 	c.JSON(http.StatusOK, r)
 }
 
