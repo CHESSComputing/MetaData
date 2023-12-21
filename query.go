@@ -15,41 +15,11 @@ import (
 
 	utils "github.com/CHESSComputing/golib/utils"
 	bson "go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive" // for BSON ObjectID
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // separator defines our query separator
 var separator = ":"
-
-func convertType(val interface{}) interface{} {
-	switch v := val.(type) {
-	case []interface{}:
-		return v
-	case string:
-		if utils.IsInt(fmt.Sprintf("%v", v)) {
-			v, e := strconv.Atoi(v)
-			if e == nil {
-				return v
-			}
-		}
-		if utils.IsFloat(fmt.Sprintf("%v", v)) {
-			v, e := strconv.ParseFloat(v, 64)
-			if e == nil {
-				return v
-			}
-		}
-		if strings.Contains(v, ",") {
-			var out []string
-			for _, vvv := range strings.Split(v, ",") {
-				out = append(out, strings.Trim(vvv, " "))
-			}
-			return out
-		}
-		return val
-	default:
-		return val
-	}
-}
 
 // ParseQuery function provides basic parser for user queries and return
 // results in bson dictionary
@@ -140,8 +110,17 @@ func adjustQuery(spec bson.M) bson.M {
 				nspec[key] = bson.M{"$regex": pat, "$options": "i"}
 			}
 		} else {
-			log.Printf("WARNING: unable to find matching schema key for %s, existing schema keys %+v", kkk, _schemaKeys)
-			nspec[kkk] = val
+			if kkk == "did" {
+				sval := fmt.Sprintf("%s", val)
+				v, err := strconv.ParseInt(sval, 10, 64)
+				if err != nil {
+					log.Println("ERROR: unable to prase did int64", err)
+				}
+				nspec[kkk] = v
+			} else {
+				log.Printf("WARNING: unable to find matching schema key for %s, existing schema keys %+v", kkk, _schemaKeys)
+				nspec[kkk] = val
+			}
 		}
 	}
 	if Verbose > 0 {
