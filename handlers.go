@@ -83,9 +83,9 @@ func RecordHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, records)
 }
 
-// helper function to parse input HTTP request JSON spec data
-func parseSpec(c *gin.Context) (mongo.Record, error) {
-	var rec mongo.Record
+// helper function to parse incoming HTTP request into ServiceRequest structure
+func parseQueryRequest(c *gin.Context) (services.ServiceRequest, error) {
+	var rec services.ServiceRequest
 	defer c.Request.Body.Close()
 	body, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
@@ -96,7 +96,7 @@ func parseSpec(c *gin.Context) (mongo.Record, error) {
 		return rec, err
 	}
 	if Verbose > 0 {
-		log.Printf("QueryHandler received request %+v", rec)
+		log.Printf("QueryHandler received request %+s", rec.String())
 	}
 	return rec, nil
 }
@@ -151,29 +151,22 @@ func DataHandler(c *gin.Context) {
 
 // QueryHandler handles POST queries
 func QueryHandler(c *gin.Context) {
-	rec, err := parseSpec(c)
+
+	rec, err := parseQueryRequest(c)
 	if err != nil {
 		rec := services.Response("MetaData", http.StatusInternalServerError, services.ParseError, err)
 		c.JSON(http.StatusInternalServerError, rec)
 		return
 	}
-	query := fmt.Sprintf("%v", rec["query"])
-	user := fmt.Sprintf("%v", rec["user"])
-	idx := 0
-	limit := 10
-	if val, ok := rec["idx"]; ok {
-		if v, err := strconv.Atoi(fmt.Sprintf("%v", val)); err == nil {
-			idx = v
-		}
-	}
-	if val, ok := rec["limit"]; ok {
-		if v, err := strconv.Atoi(fmt.Sprintf("%v", val)); err == nil {
-			limit = v
-		}
-	}
+
+	// get all attributes we need
+	query := rec.ServiceQuery.Query
+	idx := rec.ServiceQuery.Idx
+	limit := rec.ServiceQuery.Limit
+
 	spec, err := ParseQuery(query)
 	if Verbose > 0 {
-		log.Printf("search query='%s' spec=%+v user=%v", query, spec, user)
+		log.Printf("search query='%s' spec=%+v", query, spec)
 	}
 	if err != nil {
 		rec := services.Response("MetaData", http.StatusInternalServerError, services.ParseError, err)
@@ -191,7 +184,7 @@ func QueryHandler(c *gin.Context) {
 		log.Printf("spec %v nrecords %d return idx=%d limit=%d", spec, nrecords, idx, limit)
 	}
 	r := services.Response("MetaData", http.StatusOK, services.OK, nil)
-	r.Query = services.ServiceQuery{Query: query, Spec: spec, Idx: idx, Limit: limit}
+	r.ServiceQuery = services.ServiceQuery{Query: query, Spec: spec, Idx: idx, Limit: limit}
 	r.Results = services.ServiceResults{NRecords: nrecords, Records: records}
 	c.JSON(http.StatusOK, r)
 }
