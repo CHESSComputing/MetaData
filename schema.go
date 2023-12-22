@@ -456,9 +456,9 @@ func validDataValue(rec SchemaRecord, v any) bool {
 				}
 			}
 			if Verbose > 0 {
-				log.Println("values list", values, len(values))
-				log.Println("matched list", matchArr, len(matchArr))
-				log.Println("expected list", rvalues, len(rvalues))
+				log.Printf("values list %v type=%T total=%d", values, values, len(values))
+				log.Printf("matched list %v type=%T total=%d", matchArr, matchArr, len(matchArr))
+				log.Printf("expected list %v type=%T total=%d", rvalues, rvalues, len(rvalues))
 			}
 			// all matched values
 			if len(matchArr) == len(rvalues) {

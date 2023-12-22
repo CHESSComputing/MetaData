@@ -128,7 +128,7 @@ func insertData(sname string, rec mongo.Record) error {
 	// check if given path exist on file system
 	_, err := os.Stat(path)
 	if err == nil {
-		log.Printf("input data, record %v, path %v\n", rec, path)
+		//         log.Printf("input data, record\n%v\npath %v\n", rec, path)
 		rec["path"] = path
 		// we generate unique id by using time stamp
 		// use UnixMilli as UnixNano is truncated in MongoDB

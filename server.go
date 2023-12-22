@@ -60,22 +60,13 @@ func setupRouter() *gin.Engine {
 	// gin.DisableConsoleColor()
 	r := gin.Default()
 
-	// CHESSDataManagement APIs
-	r.GET(base("/schemas"), SchemasHandler)
-	r.GET(base("/process"), ProcessHandler)
-
-	// TMP: until I implement tokens in client
-	r.POST(base("/updateRecord"), UpdateRecordHandler)
-	r.POST(base("/json"), UploadJsonHandler)
-	// end of TMP
-
-	// all POST methods ahould be authorized
+	// all methods ahould be authorized
 	authorized := r.Group("/")
 	authorized.Use(authz.TokenMiddleware(srvConfig.Config.Authz.ClientID, Verbose))
 	{
 		// data-service APIs
 		authorized.GET("/:did", RecordHandler)
-		authorized.PUT("/", UpdateHandler)
+		authorized.PUT("/", DataHandler)
 		authorized.POST("/", DataHandler)
 		authorized.POST("/search", QueryHandler)
 		authorized.DELETE("/:did", DeleteHandler)
