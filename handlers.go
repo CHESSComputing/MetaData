@@ -10,6 +10,7 @@ import (
 	beamlines "github.com/CHESSComputing/golib/beamlines"
 	srvConfig "github.com/CHESSComputing/golib/config"
 	mongo "github.com/CHESSComputing/golib/mongo"
+	server "github.com/CHESSComputing/golib/server"
 	services "github.com/CHESSComputing/golib/services"
 	"github.com/gin-gonic/gin"
 	bson "go.mongodb.org/mongo-driver/bson"
@@ -18,6 +19,11 @@ import (
 // MetaParams represents URI storage params in /did end-point
 type MetaParams struct {
 	DID int64 `uri:"did" binding:"required"`
+}
+
+// ApisHandler provides all server routes
+func ApisHandler(c *gin.Context) {
+	server.ApisHandler(c, _routes)
 }
 
 // RecordHandler handles POST queries

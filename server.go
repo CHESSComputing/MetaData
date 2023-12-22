@@ -27,6 +27,7 @@ var Verbose int
 var _beamlines []string
 var _smgr SchemaManager
 var _header, _footer string
+var _routes gin.RoutesInfo
 
 // init function
 // func init() {
@@ -59,6 +60,7 @@ func setupRouter() *gin.Engine {
 	// Disable Console Color
 	// gin.DisableConsoleColor()
 	r := gin.Default()
+	r.GET("/apis", ApisHandler)
 
 	// all methods ahould be authorized
 	authorized := r.Group("/")
@@ -84,7 +86,7 @@ func setupRouter() *gin.Engine {
 
 	// assign middleware
 	r.Use(server.CounterMiddleware())
-
+	_routes = r.Routes()
 	return r
 }
 
