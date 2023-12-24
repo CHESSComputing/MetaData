@@ -3,11 +3,8 @@ package main
 import (
 	"embed"
 	"fmt"
-	"io/fs"
 	"log"
-	"net/http"
 
-	authz "github.com/CHESSComputing/golib/authz"
 	srvConfig "github.com/CHESSComputing/golib/config"
 	mongo "github.com/CHESSComputing/golib/mongo"
 	server "github.com/CHESSComputing/golib/server"
@@ -26,70 +23,26 @@ var Verbose int
 // global variables
 var _beamlines []string
 var _smgr SchemaManager
-var _header, _footer string
-var _routes gin.RoutesInfo
 
-// init function
-// func init() {
-// }
-
-func header() string {
-	if _header == "" {
-		tmpl := server.MakeTmpl(StaticFs, "Header")
-		tmpl["Base"] = srvConfig.Config.CHESSMetaData.WebServer.Base
-		_header = server.TmplPage(StaticFs, "header.tmpl", tmpl)
-	}
-	return _header
-}
-func footer() string {
-	if _footer == "" {
-		tmpl := server.MakeTmpl(StaticFs, "Footer")
-		tmpl["Base"] = srvConfig.Config.CHESSMetaData.WebServer.Base
-		_footer = server.TmplPage(StaticFs, "footer.tmpl", tmpl)
-	}
-	return _footer
-}
-
-// helper function to handle base path of URL requests
-func base(api string) string {
-	b := srvConfig.Config.CHESSMetaData.WebServer.Base
-	return utils.BasePath(b, api)
-}
-
+// helper function to setup our router
 func setupRouter() *gin.Engine {
-	// Disable Console Color
-	// gin.DisableConsoleColor()
-	r := gin.Default()
-	r.GET("/apis", ApisHandler)
-
-	// all methods ahould be authorized
-	authorized := r.Group("/")
-	authorized.Use(authz.TokenMiddleware(srvConfig.Config.Authz.ClientID, Verbose))
-	{
-		// data-service APIs
-		authorized.GET("/:did", RecordHandler)
-		authorized.PUT("/", DataHandler)
-		authorized.POST("/", DataHandler)
-		authorized.POST("/search", QueryHandler)
-		authorized.DELETE("/:did", DeleteHandler)
+	routes := []server.Route{
+		server.Route{Method: "GET", Path: "/:did", Handler: RecordHandler, Authorized: true},
+		server.Route{Method: "PUT", Path: "/", Handler: DataHandler, Authorized: true},
+		server.Route{Method: "POST", Path: "/", Handler: DataHandler, Authorized: true},
+		server.Route{Method: "POST", Path: "/search", Handler: QueryHandler, Authorized: true},
+		server.Route{Method: "DELETE", Path: "/:did", Handler: DeleteHandler, Authorized: true},
 	}
-
-	// static files
-	for _, dir := range []string{"js", "css", "images", "templates"} {
-		filesFS, err := fs.Sub(StaticFs, "static/"+dir)
-		if err != nil {
-			log.Fatal(err)
-		}
-		m := fmt.Sprintf("%s/%s", srvConfig.Config.CHESSMetaData.WebServer.Base, dir)
-		r.StaticFS(m, http.FS(filesFS))
-	}
-
+	r := server.Router(routes, nil, "static",
+		srvConfig.Config.CHESSMetaData.WebServer.Base,
+		srvConfig.Config.CHESSMetaData.WebServer.Verbose,
+	)
 	// assign middleware
 	r.Use(server.CounterMiddleware())
-	_routes = r.Routes()
 	return r
 }
 
+// Server defines our HTTP server
 func Server() {
 	// init MongoDB
 	log.Println("init mongo", srvConfig.Config.CHESSMetaData.MongoDB.DBUri)
