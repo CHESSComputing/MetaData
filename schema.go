@@ -23,7 +23,7 @@ import (
 )
 
 // skip keys
-var _skipKeys = []string{"User", "Date", "Description", "SchemaName", "SchemaFile", "Schema"}
+var _skipKeys = []string{"User", "Date", "Description", "SchemaName", "SchemaFile", "Schema", "did"}
 
 // SchemaKeys represents full collection of schema keys across all schemas
 type SchemaKeys map[string]string
