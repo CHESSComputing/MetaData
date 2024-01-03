@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"log"
@@ -12,6 +13,7 @@ import (
 	srvConfig "github.com/CHESSComputing/golib/config"
 	mongo "github.com/CHESSComputing/golib/mongo"
 	utils "github.com/CHESSComputing/golib/utils"
+	"github.com/google/uuid"
 )
 
 // helper function to validate input data record against schema
@@ -132,7 +134,14 @@ func insertData(sname string, rec mongo.Record) error {
 		rec["path"] = path
 		// we generate unique id by using time stamp
 		// use UnixMilli as UnixNano is truncated in MongoDB
-		did := time.Now().UnixMilli()
+		var did string
+		if uuid, err := uuid.NewRandom(); err == nil {
+			did = hex.EncodeToString(uuid[:])
+		}
+		if v, ok := rec["did"]; ok {
+			did = fmt.Sprintf("%v", v)
+			delete(rec, "did")
+		}
 		err = InsertFiles(did, dataset, path)
 		if err != nil {
 			log.Printf("ERROR: unable to InsertFiles for did=%v dataset=%s path=%s, error=%v", did, dataset, path, err)
@@ -155,13 +164,13 @@ func insertData(sname string, rec mongo.Record) error {
 }
 
 // helper function to insert files into DataBookkeeping service
-func InsertFiles(did int64, dataset, path string) error {
+func InsertFiles(did, dataset, path string) error {
 	// TODO: add implementation to insert files into DataBookkeeping service
 	return nil
 }
 
 // helper function to get list of files from dataset DID
-func getFiles(did int64) ([]string, error) {
+func getFiles(did string) ([]string, error) {
 	// TODO: add implementation to look-up files from DataBookkeeping service
 	var files []string
 	return files, nil
