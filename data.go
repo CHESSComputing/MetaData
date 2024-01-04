@@ -132,46 +132,26 @@ func insertData(sname string, rec mongo.Record) error {
 	if err == nil {
 		//         log.Printf("input data, record\n%v\npath %v\n", rec, path)
 		rec["path"] = path
-		// we generate unique id by using time stamp
-		// use UnixMilli as UnixNano is truncated in MongoDB
-		var did string
-		if uuid, err := uuid.NewRandom(); err == nil {
-			did = hex.EncodeToString(uuid[:])
+		// generate unique id
+		if _, ok := rec["did"]; !ok {
+			if uuid, err := uuid.NewRandom(); err == nil {
+				rec["did"] = hex.EncodeToString(uuid[:])
+			} else {
+				rec["did"] = fmt.Sprintf("%v", time.Now().UnixMilli())
+			}
 		}
-		if v, ok := rec["did"]; ok {
-			did = fmt.Sprintf("%v", v)
-			delete(rec, "did")
-		}
-		err = InsertFiles(did, dataset, path)
-		if err != nil {
-			log.Printf("ERROR: unable to InsertFiles for did=%v dataset=%s path=%s, error=%v", did, dataset, path, err)
-			return err
-		}
-		rec["did"] = did
+		// add record to mongo DB
 		records := []mongo.Record{rec}
 		err = mongo.Upsert(
 			srvConfig.Config.CHESSMetaData.MongoDB.DBName,
 			srvConfig.Config.CHESSMetaData.MongoDB.DBColl,
 			"dataset", records)
 		if err != nil {
-			log.Printf("ERROR: unable to MongoUpsert for did=%v dataset=%s path=%s, error=%v", did, dataset, path, err)
+			log.Printf("ERROR: unable to MongoUpsert for dataset=%s path=%s, error=%v", dataset, path, err)
 		}
 		return err
 	}
 	msg := fmt.Sprintf("No files found associated with DataLocationRaw=%s", path)
 	log.Printf("ERROR: %s", msg)
 	return errors.New(msg)
-}
-
-// helper function to insert files into DataBookkeeping service
-func InsertFiles(did, dataset, path string) error {
-	// TODO: add implementation to insert files into DataBookkeeping service
-	return nil
-}
-
-// helper function to get list of files from dataset DID
-func getFiles(did string) ([]string, error) {
-	// TODO: add implementation to look-up files from DataBookkeeping service
-	var files []string
-	return files, nil
 }
