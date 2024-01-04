@@ -10,7 +10,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"strconv"
 	"strings"
 
 	utils "github.com/CHESSComputing/golib/utils"
@@ -110,17 +109,10 @@ func adjustQuery(spec bson.M) bson.M {
 				nspec[key] = bson.M{"$regex": pat, "$options": "i"}
 			}
 		} else {
-			if kkk == "did" {
-				sval := fmt.Sprintf("%s", val)
-				v, err := strconv.ParseInt(sval, 10, 64)
-				if err != nil {
-					log.Println("ERROR: unable to prase did int64", err)
-				}
-				nspec[kkk] = v
-			} else {
+			if kkk != "did" {
 				log.Printf("WARNING: unable to find matching schema key for %s, existing schema keys %+v", kkk, _schemaKeys)
-				nspec[kkk] = val
 			}
+			nspec[kkk] = val
 		}
 	}
 	if Verbose > 0 {
