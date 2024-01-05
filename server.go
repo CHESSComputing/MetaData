@@ -28,10 +28,10 @@ var _smgr SchemaManager
 func setupRouter() *gin.Engine {
 	routes := []server.Route{
 		server.Route{Method: "GET", Path: "/:did", Handler: RecordHandler, Authorized: true},
-		server.Route{Method: "PUT", Path: "/", Handler: DataHandler, Authorized: true},
-		server.Route{Method: "POST", Path: "/", Handler: DataHandler, Authorized: true},
+		server.Route{Method: "PUT", Path: "/", Handler: DataHandler, Authorized: true, Scope: "write"},
+		server.Route{Method: "POST", Path: "/", Handler: DataHandler, Authorized: true, Scope: "write"},
 		server.Route{Method: "POST", Path: "/search", Handler: QueryHandler, Authorized: true},
-		server.Route{Method: "DELETE", Path: "/:did", Handler: DeleteHandler, Authorized: true},
+		server.Route{Method: "DELETE", Path: "/:did", Handler: DeleteHandler, Authorized: true, Scope: "write"},
 	}
 	r := server.Router(routes, nil, "static", srvConfig.Config.CHESSMetaData.WebServer)
 	// assign middleware
