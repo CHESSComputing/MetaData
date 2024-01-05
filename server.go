@@ -33,10 +33,7 @@ func setupRouter() *gin.Engine {
 		server.Route{Method: "POST", Path: "/search", Handler: QueryHandler, Authorized: true},
 		server.Route{Method: "DELETE", Path: "/:did", Handler: DeleteHandler, Authorized: true},
 	}
-	r := server.Router(routes, nil, "static",
-		srvConfig.Config.CHESSMetaData.WebServer.Base,
-		srvConfig.Config.CHESSMetaData.WebServer.Verbose,
-	)
+	r := server.Router(routes, nil, "static", srvConfig.Config.CHESSMetaData.WebServer)
 	// assign middleware
 	r.Use(server.CounterMiddleware())
 	return r
