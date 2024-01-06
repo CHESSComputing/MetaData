@@ -4,7 +4,7 @@ import (
 	"log"
 
 	srvConfig "github.com/CHESSComputing/golib/config"
-	oreMongo "github.com/CHESSComputing/golib/mongo"
+	mongo "github.com/CHESSComputing/golib/mongo"
 	bson "go.mongodb.org/mongo-driver/bson"
 	// bson "gopkg.in/mgo.v2/bson"
 )
@@ -19,8 +19,8 @@ type MetaData struct {
 }
 
 // Record converts MetaData to MongoDB record
-func (m *MetaData) Record() oreMongo.Record {
-	rec := make(oreMongo.Record)
+func (m *MetaData) Record() map[string]any {
+	rec := make(map[string]any)
 	rec["id"] = m.ID
 	rec["site"] = m.Site
 	rec["description"] = m.Description
@@ -31,9 +31,9 @@ func (m *MetaData) Record() oreMongo.Record {
 
 // insert MetaData record to MongoDB
 func (m *MetaData) mongoInsert() {
-	var records []oreMongo.Record
+	var records []map[string]any
 	records = append(records, m.Record())
-	oreMongo.Insert(
+	mongo.Insert(
 		srvConfig.Config.MetaData.MongoDB.DBName,
 		srvConfig.Config.MetaData.MongoDB.DBColl,
 		records)
@@ -41,9 +41,9 @@ func (m *MetaData) mongoInsert() {
 
 // upsert MetaData record to MongoDB using given key
 func (m *MetaData) mongoUpsert(key string) {
-	var records []oreMongo.Record
+	var records []map[string]any
 	records = append(records, m.Record())
-	oreMongo.Upsert(
+	mongo.Upsert(
 		srvConfig.Config.MetaData.MongoDB.DBName,
 		srvConfig.Config.MetaData.MongoDB.DBColl,
 		key,
@@ -53,7 +53,7 @@ func (m *MetaData) mongoUpsert(key string) {
 // remove MetaData record from MongoDB
 func (m *MetaData) mongoRemove() {
 	spec := bson.M{"id": m.ID}
-	oreMongo.Remove(
+	mongo.Remove(
 		srvConfig.Config.MetaData.MongoDB.DBName,
 		srvConfig.Config.MetaData.MongoDB.DBColl,
 		spec)

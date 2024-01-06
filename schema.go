@@ -17,7 +17,6 @@ import (
 	"time"
 
 	srvConfig "github.com/CHESSComputing/golib/config"
-	mongo "github.com/CHESSComputing/golib/mongo"
 	utils "github.com/CHESSComputing/golib/utils"
 	yaml "gopkg.in/yaml.v2"
 )
@@ -230,7 +229,7 @@ func (s *Schema) Load() error {
 }
 
 // Validate validates given record against schema
-func (s *Schema) Validate(rec mongo.Record) error {
+func (s *Schema) Validate(rec map[string]any) error {
 	if err := s.Load(); err != nil {
 		return err
 	}

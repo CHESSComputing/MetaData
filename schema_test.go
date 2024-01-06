@@ -4,10 +4,13 @@ import (
 	"fmt"
 	"os"
 	"testing"
+
+	srvConfig "github.com/CHESSComputing/golib/config"
 )
 
 // TestSchemaYaml tests schema yaml file
 func TestSchemaYaml(t *testing.T) {
+	srvConfig.Init()
 	tmpFile, err := os.CreateTemp(os.TempDir(), "*.yaml")
 	if err != nil {
 		t.Fatal(err)
@@ -43,7 +46,7 @@ func TestSchemaYaml(t *testing.T) {
 	}
 	fmt.Println("Schema optional keys", okeys)
 
-	rec := make(Record)
+	rec := make(map[string]any)
 	rec["Pi"] = "person"
 	rec["BeamEnergy"] = 123
 	err = s.Validate(rec)
@@ -85,7 +88,7 @@ func TestSchemaJson(t *testing.T) {
 	}
 	fmt.Println("Schema optional keys", okeys)
 
-	rec := make(Record)
+	rec := make(map[string]any)
 	rec["Pi"] = "person"
 	rec["BeamEnergy"] = 123
 	err = s.Validate(rec)

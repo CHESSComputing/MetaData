@@ -17,7 +17,7 @@ import (
 )
 
 // helper function to validate input data record against schema
-func validateData(sname string, rec mongo.Record) error {
+func validateData(sname string, rec map[string]any) error {
 	if smgr, ok := _smgr.Map[sname]; ok {
 		schema := smgr.Schema
 		err := schema.Validate(rec)
@@ -34,8 +34,8 @@ func validateData(sname string, rec mongo.Record) error {
 
 // helper function to preprocess given record
 /*
-func preprocess(rec mongo.Record) mongo.Record {
-	r := make(mongo.Record)
+func preprocess(rec map[string]any) map[string]any {
+	r := make(map[string]any)
 	for k, v := range rec {
 		switch val := v.(type) {
 		case string:
@@ -62,7 +62,7 @@ func preprocess(rec mongo.Record) mongo.Record {
 */
 
 // helper function to insert data into backend DB
-func insertData(sname string, rec mongo.Record) error {
+func insertData(sname string, rec map[string]any) error {
 	// load our schema
 	if _, err := _smgr.Load(sname); err != nil {
 		msg := fmt.Sprintf("unable to load %s error %v", sname, err)
@@ -141,7 +141,8 @@ func insertData(sname string, rec mongo.Record) error {
 			}
 		}
 		// add record to mongo DB
-		records := []mongo.Record{rec}
+		var records []map[string]any
+		records = append(records, rec)
 		err = mongo.Upsert(
 			srvConfig.Config.CHESSMetaData.MongoDB.DBName,
 			srvConfig.Config.CHESSMetaData.MongoDB.DBColl,

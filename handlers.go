@@ -29,7 +29,7 @@ func RecordHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, rec)
 		return
 	}
-	var records []mongo.Record
+	var records []map[string]any
 	spec := bson.M{"did": params.DID}
 	records = mongo.Get(srvConfig.Config.CHESSMetaData.DBName, srvConfig.Config.CHESSMetaData.DBColl, spec, 0, -1)
 	if Verbose > 0 {
@@ -130,7 +130,7 @@ func QueryHandler(c *gin.Context) {
 		return
 	}
 
-	var records []mongo.Record
+	var records []map[string]any
 	nrecords := 0
 	if spec != nil {
 		nrecords = mongo.Count(srvConfig.Config.CHESSMetaData.DBName, srvConfig.Config.CHESSMetaData.DBColl, spec)

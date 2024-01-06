@@ -105,7 +105,7 @@ func makeURL(url, urlType string, startIdx, limit, nres int) string {
 }
 
 // helper function to generate input form
-func genForm(c *gin.Context, fname string, record *mongo.Record) (string, error) {
+func genForm(c *gin.Context, fname string, record *map[string]any) (string, error) {
 	var out []string
 	val := fmt.Sprintf("<h3>Web form submission</h3><br/>")
 	out = append(out, val)
@@ -217,7 +217,7 @@ func genForm(c *gin.Context, fname string, record *mongo.Record) (string, error)
 }
 
 // helper function to create form entry
-func formEntry(c *gin.Context, smap map[string]SchemaRecord, k, s, required string, record *mongo.Record) string {
+func formEntry(c *gin.Context, smap map[string]SchemaRecord, k, s, required string, record *map[string]any) string {
 	// check if provided record has value
 	var defaultValue string
 	if record != nil {
@@ -340,8 +340,8 @@ func schemaName(fname string) string {
 }
 
 // helper function to process input form
-func processForm(r *http.Request) (string, mongo.Record, error) {
-	rec := make(mongo.Record)
+func processForm(r *http.Request) (string, map[string]any, error) {
+	rec := make(map[string]any)
 	rec["Date"] = time.Now().Unix()
 	// read schemaName from form itself
 	var sname string
@@ -359,7 +359,7 @@ func processForm(r *http.Request) (string, mongo.Record, error) {
 	}
 	desc := ""
 	// r.PostForm provides url.Values which is map[string][]string type
-	// we convert it to Record
+	// we convert it to map[string]any
 	for k, items := range r.PostForm {
 		if Verbose > 0 {
 			log.Println("### PostForm", k, items)
@@ -398,7 +398,7 @@ func processForm(r *http.Request) (string, mongo.Record, error) {
 	return fname, rec, nil
 }
 
-func htmlInputs(rec mongo.Record) []template.HTML {
+func htmlInputs(rec map[string]any) []template.HTML {
 	var inputs []template.HTML
 	// use attrs to adjust html form
 	// it was user for adjustable attributes
