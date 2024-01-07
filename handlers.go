@@ -48,6 +48,7 @@ func parseQueryRequest(c *gin.Context) (services.ServiceRequest, error) {
 	}
 	err = json.Unmarshal(body, &rec)
 	if err != nil {
+		log.Printf("ERROR: unable to unmarshal response body %s, error %v", string(body), err)
 		return rec, err
 	}
 	if Verbose > 0 {
@@ -105,6 +106,39 @@ func DataHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, services.Response("MetaData", http.StatusOK, services.OK, nil))
 }
 
+// QueryCountHandler handles POST queries
+func QueryCountHandler(c *gin.Context) {
+
+	rec, err := parseQueryRequest(c)
+	if err != nil {
+		rec := services.Response("MetaData", http.StatusInternalServerError, services.ParseError, err)
+		c.JSON(http.StatusInternalServerError, rec)
+		return
+	}
+
+	// get all attributes we need
+	query := rec.ServiceQuery.Query
+
+	spec, err := ParseQuery(query)
+	if Verbose > 0 {
+		log.Printf("search query='%s' spec=%+v", query, spec)
+	}
+	if err != nil {
+		rec := services.Response("MetaData", http.StatusInternalServerError, services.ParseError, err)
+		c.JSON(http.StatusInternalServerError, rec)
+		return
+	}
+
+	nrecords := 0
+	if spec != nil {
+		nrecords = mongo.Count(srvConfig.Config.CHESSMetaData.DBName, srvConfig.Config.CHESSMetaData.DBColl, spec)
+	}
+	if Verbose > 0 {
+		log.Printf("spec %v nrecords %d", spec, nrecords)
+	}
+	c.JSON(http.StatusOK, nrecords)
+}
+
 // QueryHandler handles POST queries
 func QueryHandler(c *gin.Context) {
 
@@ -139,10 +173,11 @@ func QueryHandler(c *gin.Context) {
 	if Verbose > 0 {
 		log.Printf("spec %v nrecords %d return idx=%d limit=%d", spec, nrecords, idx, limit)
 	}
-	r := services.Response("MetaData", http.StatusOK, services.OK, nil)
-	r.ServiceQuery = services.ServiceQuery{Query: query, Spec: spec, Idx: idx, Limit: limit}
-	r.Results = services.ServiceResults{NRecords: nrecords, Records: records}
-	c.JSON(http.StatusOK, r)
+	//     r := services.Response("MetaData", http.StatusOK, services.OK, nil)
+	//     r.ServiceQuery = services.ServiceQuery{Query: query, Spec: spec, Idx: idx, Limit: limit}
+	//     r.Results = services.ServiceResults{NRecords: nrecords, Records: records}
+	//     c.JSON(http.StatusOK, r)
+	c.JSON(http.StatusOK, records)
 }
 
 // DeleteHandler handles POST queries
