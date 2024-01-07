@@ -31,6 +31,7 @@ func setupRouter() *gin.Engine {
 		server.Route{Method: "PUT", Path: "/", Handler: DataHandler, Authorized: true, Scope: "write"},
 		server.Route{Method: "POST", Path: "/", Handler: DataHandler, Authorized: true, Scope: "write"},
 		server.Route{Method: "POST", Path: "/search", Handler: QueryHandler, Authorized: true},
+		server.Route{Method: "POST", Path: "/count", Handler: QueryCountHandler, Authorized: true},
 		server.Route{Method: "DELETE", Path: "/:did", Handler: DeleteHandler, Authorized: true, Scope: "write"},
 	}
 	r := server.Router(routes, nil, "static", srvConfig.Config.CHESSMetaData.WebServer)
