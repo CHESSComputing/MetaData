@@ -77,7 +77,6 @@ jobs:
       actions: read
       id-token: write
       packages: write
-      contents: write # To add assets to a release.
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v1.9.0
     with:
       image: ${{ needs.goreleaser.outputs.image }}
