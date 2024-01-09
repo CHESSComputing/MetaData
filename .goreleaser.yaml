@@ -35,6 +35,9 @@ builds:
       - amd64
       - arm64
 
+# use https://ko.build/ to build Go image
+# see https://github.com/goreleaser/goreleaser/blob/main/www/docs/customization/ko.md
+# and https://ko.build/
 kos:
   - repository: ghcr.io/chesscomputing/metadata
     tags:
@@ -79,9 +82,6 @@ changelog:
     exclude:
       - "^docs:"
       - "^test:"
-
-# docker_signs:
-#   artifacts: manifests
 
 # The lines beneath this are called `modelines`. See `:help modeline`
 # Feel free to remove those if you don't want/use them.
