@@ -36,7 +36,7 @@ builds:
       - arm64
 
 kos:
-  - repository: ghcr.io/CHESSComputing/MetaData
+  - repository: ghcr.io/chesscomputing/metadata
     tags:
       - '{{.Tag}}'
       - '{{ if not .Prerelease }}latest{{ end }}' 
@@ -69,25 +69,19 @@ archives:
       - README.md
       - LICENSE
 
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
 changelog:
   sort: asc
   filters:
     exclude:
       - "^docs:"
       - "^test:"
-# checksum:
-#   name_template: 'checksums.txt'
-# snapshot:
-#   name_template: "{{ incpatch .Version }}-next"
-# changelog:
-#   sort: asc
-#   filters:
-#     exclude:
-#       - '^docs:'
-#       - '^test:'
 
-# sign:
-#   artifacts: checksum
+docker_signs:
+  artifacts: manifests
 
 # The lines beneath this are called `modelines`. See `:help modeline`
 # Feel free to remove those if you don't want/use them.
