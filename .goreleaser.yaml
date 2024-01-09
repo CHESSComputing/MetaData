@@ -69,25 +69,25 @@ archives:
       - README.md
       - LICENSE
 
-# changelog:
-#   sort: asc
-#   filters:
-#     exclude:
-#       - "^docs:"
-#       - "^test:"
-checksum:
-  name_template: 'checksums.txt'
-snapshot:
-  name_template: "{{ incpatch .Version }}-next"
 changelog:
   sort: asc
   filters:
     exclude:
-      - '^docs:'
-      - '^test:'
+      - "^docs:"
+      - "^test:"
+# checksum:
+#   name_template: 'checksums.txt'
+# snapshot:
+#   name_template: "{{ incpatch .Version }}-next"
+# changelog:
+#   sort: asc
+#   filters:
+#     exclude:
+#       - '^docs:'
+#       - '^test:'
 
-sign:
-  artifacts: checksum
+# sign:
+#   artifacts: checksum
 
 # The lines beneath this are called `modelines`. See `:help modeline`
 # Feel free to remove those if you don't want/use them.
