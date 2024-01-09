@@ -45,9 +45,6 @@ kos:
     sbom: none
     platforms:
       - all
-    env:
-      - CGO_ENABLED=0
-    binary: srv
     flags:
       - -trimpath
     ldflags:
@@ -88,6 +85,9 @@ changelog:
     exclude:
       - '^docs:'
       - '^test:'
+
+sign:
+  artifacts: checksum
 
 # The lines beneath this are called `modelines`. See `:help modeline`
 # Feel free to remove those if you don't want/use them.
