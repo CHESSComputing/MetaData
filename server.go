@@ -2,7 +2,6 @@ package main
 
 import (
 	"embed"
-	"fmt"
 	"log"
 
 	srvConfig "github.com/CHESSComputing/golib/config"
@@ -58,9 +57,9 @@ func Server() {
 	}
 
 	log.Println("Schema", _smgr.String())
+
 	// setup web router and start the service
 	r := setupRouter()
-	sport := fmt.Sprintf(":%d", srvConfig.Config.CHESSMetaData.WebServer.Port)
-	log.Printf("Start HTTP server %s", sport)
-	r.Run(sport)
+	webServer := srvConfig.Config.CHESSMetaData.WebServer
+	server.StartServer(r, webServer)
 }
