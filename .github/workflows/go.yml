@@ -13,6 +13,9 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        mongodb-version: ['4.4.14', '5.0.9']
     steps:
     - uses: actions/checkout@v3
 
@@ -23,6 +26,12 @@ jobs:
 
     - name: Build
       run: make
+
+    - name: Start MongoDB
+      uses: MongoCamp/mongodb-github-action@1.2.0
+      with:
+        mongodb-version: ${{ matrix.mongodb-version }}
+        mongodb-port: 8230
 
     - name: Test
       run: make test
