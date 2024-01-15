@@ -4,7 +4,10 @@ flags=-ldflags="-s -w"
 # flags=-ldflags="-s -w -extldflags -static"
 TAG := $(shell git tag | sed -e "s,v,," | sort -r | head -n 1)
 
-all: build
+all: golib build
+
+golib:
+	./get_golib.sh
 
 gorelease:
 	goreleaser release --snapshot --clean
@@ -92,13 +95,7 @@ ifndef MONGO
 	$(error "mongo process not found, please start it to proceed ...")
 endif
 
-testdb:
-	/bin/rm -f /tmp/files.db && \
-	sqlite3 /tmp/files.db < ./schemas/sqlite.sql && \
-	mkdir -p /tmp/${USER} && \
-	echo "test" > /tmp/${USER}/test.txt
-
-test : mongo testdb test_code
+test : mongo test_code
 
 test_code:
 	go test -test.v .
