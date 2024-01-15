@@ -1,4 +1,9 @@
 # MetaData Service
+
+![build status](https://github.com/CHESSComputing/MetaData/actions/workflows/go.yml/badge.svg)
+[![go report card](https://goreportcard.com/badge/github.com/CHESSComputing/MetaData)](https://goreportcard.com/report/github.com/CHESSComputing/MetaData)
+[![godoc](https://godoc.org/github.com/CHESSComputing/MetaData?status.svg)](https://godoc.org/github.com/CHESSComputing/MetaData)
+
 CHESS Meta Data service
 
 #### Example
