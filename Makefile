@@ -98,7 +98,7 @@ endif
 test : mongo test_code
 
 test_code:
-	touch $HOME/.foxden.yaml
+	touch ~/.foxden.yaml
 	go test -test.v .
 
 # here is an example for execution of individual test
