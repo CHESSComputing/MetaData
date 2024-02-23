@@ -97,7 +97,10 @@ func DataHandler(c *gin.Context) {
 		log.Printf("insert schema=%s record=%+v", schema, record)
 	}
 	// insert record to meta-data database
-	err = insertData(schema, record)
+	attrs := srvConfig.Config.CHESSMetaData.DID.Attributes
+	sep := srvConfig.Config.CHESSMetaData.DID.Separator
+	div := srvConfig.Config.CHESSMetaData.DID.Divider
+	err = insertData(schema, record, attrs, sep, div)
 	if err != nil {
 		rec := services.Response("MetaData", http.StatusInternalServerError, services.InsertError, err)
 		c.JSON(http.StatusInternalServerError, rec)
