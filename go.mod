@@ -3,10 +3,9 @@ module github.com/CHESSComputing/MetaData
 go 1.22.0
 
 require (
-	github.com/CHESSComputing/golib v0.1.5
+	github.com/CHESSComputing/golib v0.1.6
 	github.com/gin-gonic/gin v1.9.1
-	github.com/google/uuid v1.6.0
-	go.mongodb.org/mongo-driver v1.13.1
+	go.mongodb.org/mongo-driver v1.14.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
@@ -29,6 +28,7 @@ require (
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/gomarkdown/markdown v0.0.0-20231222211730-1d6d20845b47 // indirect
+	github.com/google/uuid v1.5.0 // indirect
 	github.com/gorilla/context v1.1.1 // indirect
 	github.com/gorilla/securecookie v1.1.1 // indirect
 	github.com/gorilla/sessions v1.2.1 // indirect
