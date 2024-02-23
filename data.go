@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"log"
@@ -13,7 +12,6 @@ import (
 	srvConfig "github.com/CHESSComputing/golib/config"
 	mongo "github.com/CHESSComputing/golib/mongo"
 	utils "github.com/CHESSComputing/golib/utils"
-	"github.com/google/uuid"
 )
 
 // helper function to validate input data record against schema
@@ -62,7 +60,7 @@ func preprocess(rec map[string]any) map[string]any {
 */
 
 // helper function to insert data into backend DB
-func insertData(sname string, rec map[string]any) error {
+func insertData(sname string, rec map[string]any, attrs, sep, div string) error {
 	// load our schema
 	if _, err := _smgr.Load(sname); err != nil {
 		msg := fmt.Sprintf("unable to load %s error %v", sname, err)
@@ -126,20 +124,17 @@ func insertData(sname string, rec map[string]any) error {
 	// dataset is a /cycle/beamline/BTR/sample
 	dataset := fmt.Sprintf("/%s/%s/%s/%s", cycle, beamline, btr, sample)
 	rec["dataset"] = dataset
-	//     rec = preprocess(rec)
+	// generate unique id
+	did, ok := rec["did"]
+	if !ok || did == "" {
+		// create did out of provided attributes
+		rec["did"] = utils.CreateDID(rec, attrs, sep, div)
+	}
+
 	// check if given path exist on file system
 	_, err := os.Stat(path)
 	if err == nil {
-		//         log.Printf("input data, record\n%v\npath %v\n", rec, path)
 		rec["path"] = path
-		// generate unique id
-		if _, ok := rec["did"]; !ok {
-			if uuid, err := uuid.NewRandom(); err == nil {
-				rec["did"] = hex.EncodeToString(uuid[:])
-			} else {
-				rec["did"] = fmt.Sprintf("%v", time.Now().UnixMilli())
-			}
-		}
 		// add record to mongo DB
 		var records []map[string]any
 		records = append(records, rec)
