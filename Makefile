@@ -101,5 +101,10 @@ test_code:
 	touch ~/.foxden.yaml
 	go test -test.v .
 
+test_int:
+	touch ~/.foxden.yaml
+	METADATA_INT_TESTS_DIR=data \
+	go test -v -failfast -run Integration
+
 # here is an example for execution of individual test
 # go test -v -run TestFilesDB
