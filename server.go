@@ -5,6 +5,7 @@ import (
 	"log"
 
 	srvConfig "github.com/CHESSComputing/golib/config"
+	lexicon "github.com/CHESSComputing/golib/lexicon"
 	mongo "github.com/CHESSComputing/golib/mongo"
 	server "github.com/CHESSComputing/golib/server"
 	utils "github.com/CHESSComputing/golib/utils"
@@ -57,6 +58,13 @@ func Server() {
 	}
 
 	log.Println("Schema", _smgr.String())
+
+	// load Lexicon patterns
+	lexPatterns, err := lexicon.LoadPatterns(srvConfig.Config.CHESSMetaData.LexiconFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+	lexicon.LexiconPatterns = lexPatterns
 
 	// setup web router and start the service
 	r := setupRouter()
