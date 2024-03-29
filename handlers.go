@@ -9,6 +9,7 @@ import (
 
 	beamlines "github.com/CHESSComputing/golib/beamlines"
 	srvConfig "github.com/CHESSComputing/golib/config"
+	lexicon "github.com/CHESSComputing/golib/lexicon"
 	mongo "github.com/CHESSComputing/golib/mongo"
 	services "github.com/CHESSComputing/golib/services"
 	"github.com/gin-gonic/gin"
@@ -96,6 +97,13 @@ func DataHandler(c *gin.Context) {
 	if Verbose > 0 {
 		log.Printf("insert schema=%s record=%+v", schema, record)
 	}
+	err = lexicon.ValidateRecord(record)
+	if err != nil {
+		rec := services.Response("MetaData", http.StatusInternalServerError, services.ValidateError, err)
+		c.JSON(http.StatusInternalServerError, rec)
+		return
+	}
+
 	// insert record to meta-data database
 	attrs := srvConfig.Config.CHESSMetaData.DID.Attributes
 	sep := srvConfig.Config.CHESSMetaData.DID.Separator
