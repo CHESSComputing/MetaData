@@ -1,0 +1,62 @@
+[
+    {
+     "description": "test POST API",
+     "method": "POST",
+     "endpoint": "/",
+     "url": "/",
+     "input": {
+         "schema": "test",
+         "record": {
+             "did": "/beamline=3a/btr=123-123",
+             "StringKey": "abc",
+             "StrKeyMultipleValues": "bla",
+             "ListKey": ["3A", "3B"],
+             "FloatKey": 1.1,
+             "BoolKey": true
+         }
+     },
+     "output": [],
+     "verbose": 0,
+     "code": 200
+    },
+    {
+     "description": "test POST API failure in validation of StringKey",
+     "method": "POST",
+     "endpoint": "/",
+     "url": "/",
+     "input": {
+         "schema": "test",
+         "record": {
+             "did": "/beamline=3a/btr=123-123",
+             "StringKey": ["abc"],
+             "StrKeyMultipleValues": "bla",
+             "ListKey": ["3A", "3B"],
+             "FloatKey": 1.1,
+             "BoolKey": true
+         }
+     },
+     "output": [],
+     "verbose": 0,
+     "code": 500
+    },
+    {
+     "description": "test POST API failure in validation of did",
+     "method": "POST",
+     "endpoint": "/",
+     "url": "/",
+     "input": {
+         "schema": "test",
+         "record": {
+             "did": "SDKLJFLKDS",
+             "StringKey": ["abc"],
+             "StrKeyMultipleValues": "bla",
+             "ListKey": ["3A", "3B"],
+             "FloatKey": 1.1,
+             "BoolKey": true
+         }
+     },
+     "output": [],
+     "verbose": 0,
+     "code": 500
+    }
+]
