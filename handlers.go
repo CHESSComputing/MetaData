@@ -21,7 +21,13 @@ type MetaParams struct {
 	DID int64 `uri:"did" binding:"required"`
 }
 
-// RecordHandler handles POST queries
+// UnitsHandler provides MetaData units dictionary via /units end-point
+func UnitsHandler(c *gin.Context) {
+	records := _smgr.MetaDataUnits()
+	c.JSON(http.StatusOK, records)
+}
+
+// RecordHandler handles queries via GET requests
 func RecordHandler(c *gin.Context) {
 	var params MetaParams
 	err := c.ShouldBindUri(&params)

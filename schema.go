@@ -16,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	beamlines "github.com/CHESSComputing/golib/beamlines"
 	srvConfig "github.com/CHESSComputing/golib/config"
 	utils "github.com/CHESSComputing/golib/utils"
 	yaml "gopkg.in/yaml.v2"
@@ -87,6 +88,27 @@ func (m *SchemaManager) Load(fname string) (*Schema, error) {
 	return schema, nil
 }
 
+// MetaDataUnits returns list of schema unit maps, each map contains schema attribute and its units key-value pairs
+func (m *SchemaManager) MetaDataUnits() []SchemaUnits {
+	var out []SchemaUnits
+	for _, sobj := range m.Map {
+		skeys := make(map[string]string)
+		for _, rec := range sobj.Schema.Map {
+			skeys[rec.Key] = rec.Units
+		}
+		sname := beamlines.SchemaName(sobj.Schema.FileName)
+		sunits := SchemaUnits{Schema: sname, Units: skeys}
+		out = append(out, sunits)
+	}
+	return out
+}
+
+// SchemaUnits represents individual FOXDEN schema units dictionary
+type SchemaUnits struct {
+	Schema string            `json:"schema"`
+	Units  map[string]string `json:"units"`
+}
+
 // SchemaRecord provide schema record structure
 type SchemaRecord struct {
 	Key         string `json:"key"`
@@ -96,6 +118,7 @@ type SchemaRecord struct {
 	Section     string `json:"section"`
 	Value       any    `json:"value"`
 	Placeholder string `json:"placeholder"`
+	Units       string `json:"units"`
 	Description string `json:"description"`
 }
 

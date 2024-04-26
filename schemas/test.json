@@ -6,6 +6,7 @@
         "multiple": false,
         "section": "User",
         "description": "Facility where the experiment was performed, e.g. CHESS, APS, ESRF",
+        "units": "cm",
         "placeholder": "CHESS"
     },
     {
@@ -44,6 +45,7 @@
         "optional": false,
         "multiple": false,
         "section": "Alignment",
+        "units": "KeV",
         "description": "horizontal beam-defining slit size - skip if this metadata record is for multiple scans with different slit sizes"
     },
     {
