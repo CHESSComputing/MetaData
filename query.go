@@ -102,8 +102,17 @@ func adjustQuery(spec bson.M) bson.M {
 			// create regex for value if it is the string
 			sval := fmt.Sprintf("%v", val)
 			if utils.PatternInt.MatchString(sval) || utils.PatternFloat.MatchString(sval) {
-				nspec[key] = val
+				// adjust value patterns to be regular expression one
+				if strings.Contains(sval, "*") && !strings.Contains(sval, ".*") {
+					sval = strings.Replace(sval, "*", ".*", -1)
+					nspec[key] = bson.M{"$regex": sval, "$options": "i"}
+				} else {
+					nspec[key] = val
+				}
 			} else {
+				if strings.Contains(sval, "*") && !strings.Contains(sval, ".*") {
+					sval = strings.Replace(sval, "*", ".*", -1)
+				}
 				//                 pat, err := regexp.Compile(fmt.Sprintf("/^%s$/i", sval))
 				pat := fmt.Sprintf("^%s$", sval)
 				nspec[key] = bson.M{"$regex": pat, "$options": "i"}
