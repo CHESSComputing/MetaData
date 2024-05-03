@@ -21,9 +21,9 @@ type MetaParams struct {
 	DID int64 `uri:"did" binding:"required"`
 }
 
-// UnitsHandler provides MetaData units dictionary via /units end-point
-func UnitsHandler(c *gin.Context) {
-	records := _smgr.MetaDataUnits()
+// MetaDetailsHandler provides MetaData details dictionary via /meta end-point
+func MetaDetailsHandler(c *gin.Context) {
+	records := _smgr.MetaDetails()
 	c.JSON(http.StatusOK, records)
 }
 

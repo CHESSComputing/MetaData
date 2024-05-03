@@ -88,25 +88,28 @@ func (m *SchemaManager) Load(fname string) (*Schema, error) {
 	return schema, nil
 }
 
-// MetaDataUnits returns list of schema unit maps, each map contains schema attribute and its units key-value pairs
-func (m *SchemaManager) MetaDataUnits() []SchemaUnits {
-	var out []SchemaUnits
+// MetaDetails returns list of schema unit maps, each map contains schema attribute and its units key-value pairs
+func (m *SchemaManager) MetaDetails() []SchemaDetails {
+	var out []SchemaDetails
 	for _, sobj := range m.Map {
-		skeys := make(map[string]string)
+		smap := make(map[string]string)
+		dmap := make(map[string]string)
 		for _, rec := range sobj.Schema.Map {
-			skeys[rec.Key] = rec.Units
+			smap[rec.Key] = rec.Units
+			dmap[rec.Key] = rec.Description
 		}
 		sname := beamlines.SchemaName(sobj.Schema.FileName)
-		sunits := SchemaUnits{Schema: sname, Units: skeys}
+		sunits := SchemaDetails{Schema: sname, Units: smap, Descriptions: dmap}
 		out = append(out, sunits)
 	}
 	return out
 }
 
-// SchemaUnits represents individual FOXDEN schema units dictionary
-type SchemaUnits struct {
-	Schema string            `json:"schema"`
-	Units  map[string]string `json:"units"`
+// SchemaDetails represents individual FOXDEN schema units dictionary
+type SchemaDetails struct {
+	Schema       string            `json:"schema"`
+	Units        map[string]string `json:"units"`
+	Descriptions map[string]string `json:"descriptions"`
 }
 
 // SchemaRecord provide schema record structure

@@ -27,7 +27,7 @@ var _smgr SchemaManager
 // helper function to setup our router
 func setupRouter() *gin.Engine {
 	routes := []server.Route{
-		server.Route{Method: "GET", Path: "/units", Handler: UnitsHandler, Authorized: false},
+		server.Route{Method: "GET", Path: "/meta", Handler: MetaDetailsHandler, Authorized: false},
 		server.Route{Method: "GET", Path: "/:did", Handler: RecordHandler, Authorized: true},
 		server.Route{Method: "PUT", Path: "/", Handler: DataHandler, Authorized: true, Scope: "write"},
 		server.Route{Method: "POST", Path: "/", Handler: DataHandler, Authorized: true, Scope: "write"},
