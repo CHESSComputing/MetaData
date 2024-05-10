@@ -147,7 +147,7 @@ func insertData(sname string, rec map[string]any, attrs, sep, div string) (strin
 		if err != nil {
 			log.Printf("ERROR: unable to MongoUpsert for dataset=%s path=%s, error=%v", dataset, path, err)
 		}
-		return "", err
+		return did, err
 	}
 	msg := fmt.Sprintf("No files found associated with DataLocationRaw=%s", path)
 	log.Printf("ERROR: %s", msg)
