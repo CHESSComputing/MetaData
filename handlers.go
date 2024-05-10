@@ -125,7 +125,7 @@ func DataHandler(c *gin.Context) {
 	r := make(map[string]any)
 	r["did"] = did
 	records = append(records, r)
-	resp.Results = &services.ServiceResults{NRecords: 1, Records: records}
+	resp.Results = services.ServiceResults{NRecords: 1, Records: records}
 	c.JSON(http.StatusOK, resp)
 }
 
