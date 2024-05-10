@@ -114,13 +114,19 @@ func DataHandler(c *gin.Context) {
 	attrs := srvConfig.Config.DID.Attributes
 	sep := srvConfig.Config.DID.Separator
 	div := srvConfig.Config.DID.Divider
-	err = insertData(schema, record, attrs, sep, div)
+	did, err := insertData(schema, record, attrs, sep, div)
 	if err != nil {
 		rec := services.Response("MetaData", http.StatusInternalServerError, services.InsertError, err)
 		c.JSON(http.StatusInternalServerError, rec)
 		return
 	}
-	c.JSON(http.StatusOK, services.Response("MetaData", http.StatusOK, services.OK, nil))
+	var records []map[string]any
+	resp := services.Response("MetaData", http.StatusOK, services.OK, nil)
+	r := make(map[string]any)
+	r["did"] = did
+	records = append(records, r)
+	resp.Results = &services.ServiceResults{NRecords: 1, Records: records}
+	c.JSON(http.StatusOK, resp)
 }
 
 // QueryCountHandler handles POST queries

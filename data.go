@@ -60,17 +60,17 @@ func preprocess(rec map[string]any) map[string]any {
 */
 
 // helper function to insert data into backend DB
-func insertData(sname string, rec map[string]any, attrs, sep, div string) error {
+func insertData(sname string, rec map[string]any, attrs, sep, div string) (string, error) {
 	// load our schema
 	if _, err := _smgr.Load(sname); err != nil {
 		msg := fmt.Sprintf("unable to load %s error %v", sname, err)
 		log.Println("ERROR: ", msg)
-		return errors.New(msg)
+		return "", errors.New(msg)
 	}
 
 	// check if data satisfies to one of the schema
 	if err := validateData(sname, rec); err != nil {
-		return err
+		return "", err
 	}
 	if _, ok := rec["Date"]; !ok {
 		rec["Date"] = time.Now().Unix()
@@ -125,10 +125,12 @@ func insertData(sname string, rec map[string]any, attrs, sep, div string) error 
 	dataset := fmt.Sprintf("/%s/%s/%s/%s", cycle, beamline, btr, sample)
 	rec["dataset"] = dataset
 	// generate unique id
-	did, ok := rec["did"]
+	didValue, ok := rec["did"]
+	did := fmt.Sprintf("%s", didValue)
 	if !ok || did == "" {
 		// create did out of provided attributes
-		rec["did"] = utils.CreateDID(rec, attrs, sep, div)
+		did = utils.CreateDID(rec, attrs, sep, div)
+		rec["did"] = did
 	}
 
 	// check if given path exist on file system
@@ -145,9 +147,9 @@ func insertData(sname string, rec map[string]any, attrs, sep, div string) error 
 		if err != nil {
 			log.Printf("ERROR: unable to MongoUpsert for dataset=%s path=%s, error=%v", dataset, path, err)
 		}
-		return err
+		return "", err
 	}
 	msg := fmt.Sprintf("No files found associated with DataLocationRaw=%s", path)
 	log.Printf("ERROR: %s", msg)
-	return errors.New(msg)
+	return did, errors.New(msg)
 }
