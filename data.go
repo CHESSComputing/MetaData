@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	srvConfig "github.com/CHESSComputing/golib/config"
@@ -67,19 +66,22 @@ func insertData(sname string, rec map[string]any, attrs, sep, div string) (strin
 		log.Println("ERROR: ", msg)
 		return "", errors.New(msg)
 	}
+	if Verbose > 0 {
+		log.Printf("insert data %+v", rec)
+	}
 
 	// check if data satisfies to one of the schema
 	if err := validateData(sname, rec); err != nil {
 		return "", err
 	}
-	if _, ok := rec["Date"]; !ok {
-		rec["Date"] = time.Now().Unix()
+	if _, ok := rec["date"]; !ok {
+		rec["date"] = time.Now().Unix()
 	}
-	rec["SchemaFile"] = sname
-	rec["Schema"] = schemaName(sname)
+	rec["schema_file"] = sname
+	rec["schema"] = schemaName(sname)
 	// main attributes to work with
-	var path, cycle, beamline, btr, sample string
-	if v, ok := rec["DataLocationRaw"]; ok {
+	var path string
+	if v, ok := rec["data_location_raw"]; ok {
 		path = v.(string)
 	} else {
 		path = filepath.Join("/tmp", os.Getenv("USER")) // for testing purposes
@@ -88,42 +90,6 @@ func insertData(sname string, rec map[string]any, attrs, sep, div string) (strin
 			path = "/tmp"
 		}
 	}
-	// log record just in case we need to debug it
-	log.Printf("cycle=%v beamline=%v btr=%v sample=%v", rec["Cycle"], rec["Beamline"], rec["BTR"], rec["SampleName"])
-	if v, ok := rec["Cycle"]; ok {
-		cycle = v.(string)
-	} else {
-		cycle = fmt.Sprintf("Cycle-%s", utils.RandomString())
-	}
-	if v, ok := rec["Beamline"]; ok {
-		switch b := v.(type) {
-		case string:
-			beamline = b
-		case []string:
-			beamline = strings.Join(b, "-")
-		case []any:
-			var values []string
-			for _, v := range b {
-				values = append(values, fmt.Sprintf("%v", v))
-			}
-			beamline = strings.Join(values, "-")
-		}
-	} else {
-		beamline = fmt.Sprintf("beamline-%s", utils.RandomString())
-	}
-	if v, ok := rec["BTR"]; ok {
-		btr = v.(string)
-	} else {
-		btr = fmt.Sprintf("btr-%s", utils.RandomString())
-	}
-	if v, ok := rec["SampleName"]; ok {
-		sample = v.(string)
-	} else {
-		sample = fmt.Sprintf("sample-%s", utils.RandomString())
-	}
-	// dataset is a /cycle/beamline/BTR/sample
-	dataset := fmt.Sprintf("/%s/%s/%s/%s", cycle, beamline, btr, sample)
-	rec["dataset"] = dataset
 	// generate unique id
 	didValue, ok := rec["did"]
 	did := fmt.Sprintf("%s", didValue)
@@ -143,9 +109,9 @@ func insertData(sname string, rec map[string]any, attrs, sep, div string) (strin
 		err = mongo.Upsert(
 			srvConfig.Config.CHESSMetaData.MongoDB.DBName,
 			srvConfig.Config.CHESSMetaData.MongoDB.DBColl,
-			"dataset", records)
+			"did", records)
 		if err != nil {
-			log.Printf("ERROR: unable to MongoUpsert for dataset=%s path=%s, error=%v", dataset, path, err)
+			log.Printf("ERROR: unable to MongoUpsert for did=%s path=%s, error=%v", did, path, err)
 		}
 		return did, err
 	}

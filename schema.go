@@ -23,7 +23,7 @@ import (
 )
 
 // skip keys
-var _skipKeys = []string{"User", "Date", "Description", "SchemaName", "SchemaFile", "Schema", "did"}
+var _skipKeys []string
 
 // SchemaKeys represents full collection of schema keys across all schemas
 type SchemaKeys map[string]string
@@ -31,7 +31,7 @@ type SchemaKeys map[string]string
 // schema keys map
 var _schemaKeys SchemaKeys
 
-// SchemaRenewInterval setup interal to update schema cache
+// SchemaRenewInterval setup internal to update schema cache
 var SchemaRenewInterval time.Duration
 
 // SchemaObject holds current MetaData schema

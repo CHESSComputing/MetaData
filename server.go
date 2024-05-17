@@ -67,6 +67,12 @@ func Server() {
 	}
 	lexicon.LexiconPatterns = lexPatterns
 
+	_skipKeys = srvConfig.Config.CHESSMetaData.SkipKeys
+	if len(_skipKeys) == 0 {
+		// default list
+		_skipKeys = []string{"user", "date", "description", "schema_name", "schema_file", "schema", "did"}
+	}
+
 	// setup web router and start the service
 	r := setupRouter()
 	webServer := srvConfig.Config.CHESSMetaData.WebServer
