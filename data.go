@@ -115,7 +115,7 @@ func insertData(sname string, rec map[string]any, attrs, sep, div string) (strin
 		}
 		return did, err
 	}
-	msg := fmt.Sprintf("No files found associated with DataLocationRaw=%s", path)
+	msg := fmt.Sprintf("No files found associated with DataLocationRaw=%s, error=%v", path, err)
 	log.Printf("ERROR: %s", msg)
 	return did, errors.New(msg)
 }
