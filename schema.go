@@ -94,12 +94,14 @@ func (m *SchemaManager) MetaDetails() []SchemaDetails {
 	for _, sobj := range m.Map {
 		smap := make(map[string]string)
 		dmap := make(map[string]string)
+		tmap := make(map[string]string)
 		for _, rec := range sobj.Schema.Map {
 			smap[rec.Key] = rec.Units
 			dmap[rec.Key] = rec.Description
+			tmap[rec.Key] = rec.Type
 		}
 		sname := beamlines.SchemaName(sobj.Schema.FileName)
-		sunits := SchemaDetails{Schema: sname, Units: smap, Descriptions: dmap}
+		sunits := SchemaDetails{Schema: sname, Units: smap, Descriptions: dmap, DataTypes: tmap}
 		out = append(out, sunits)
 	}
 	return out
@@ -110,6 +112,7 @@ type SchemaDetails struct {
 	Schema       string            `json:"schema"`
 	Units        map[string]string `json:"units"`
 	Descriptions map[string]string `json:"descriptions"`
+	DataTypes    map[string]string `json:"types"`
 }
 
 // SchemaRecord provide schema record structure
