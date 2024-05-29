@@ -4,9 +4,9 @@ We will perform the following steps:
 
 1. migrate all existing schemas `ID1A3.json`, `ID3A.json` and `ID4B.json` to new
 naming convention
-  - in new naming convention we'll use only lower case characters with
-  underscore separator, e.g. `BeamSlitVerticalPosition` key will be 
-  transformed into `Beam_slit_vertical_position`
+   - in new naming convention we'll use only lower case characters with
+   underscore separator, e.g. `BeamSlitVerticalPosition` key will be 
+   transformed into `Beam_slit_vertical_position`
 2. each schema file may have additional `units` key-value pair providing
 specific units for meta-data record, e.g.
 ```
