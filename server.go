@@ -28,12 +28,12 @@ var _smgr SchemaManager
 func setupRouter() *gin.Engine {
 	routes := []server.Route{
 		server.Route{Method: "GET", Path: "/meta", Handler: MetaDetailsHandler, Authorized: false},
-		server.Route{Method: "GET", Path: "/:did", Handler: RecordHandler, Authorized: true},
+		server.Route{Method: "GET", Path: "/record", Handler: RecordHandler, Authorized: false},
 		server.Route{Method: "PUT", Path: "/", Handler: DataHandler, Authorized: true, Scope: "write"},
 		server.Route{Method: "POST", Path: "/", Handler: DataHandler, Authorized: true, Scope: "write"},
 		server.Route{Method: "POST", Path: "/search", Handler: QueryHandler, Authorized: true},
 		server.Route{Method: "POST", Path: "/count", Handler: QueryCountHandler, Authorized: true},
-		server.Route{Method: "DELETE", Path: "/:did", Handler: DeleteHandler, Authorized: true, Scope: "delete"},
+		server.Route{Method: "DELETE", Path: "/record", Handler: DeleteHandler, Authorized: true, Scope: "delete"},
 	}
 	r := server.Router(routes, nil, "static", srvConfig.Config.CHESSMetaData.WebServer)
 	return r

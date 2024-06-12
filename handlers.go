@@ -16,9 +16,9 @@ import (
 	bson "go.mongodb.org/mongo-driver/bson"
 )
 
-// MetaParams represents URI storage params in /did end-point
+// MetaParams represents /record?did=bla end-point
 type MetaParams struct {
-	DID int64 `uri:"did" binding:"required"`
+	DID string `form:"did"`
 }
 
 // MetaDetailsHandler provides MetaData details dictionary via /meta end-point
@@ -30,7 +30,7 @@ func MetaDetailsHandler(c *gin.Context) {
 // RecordHandler handles queries via GET requests
 func RecordHandler(c *gin.Context) {
 	var params MetaParams
-	err := c.ShouldBindUri(&params)
+	err := c.Bind(&params)
 	if err != nil {
 		rec := services.Response("MetaData", http.StatusBadRequest, services.BindError, err)
 		c.JSON(http.StatusBadRequest, rec)
