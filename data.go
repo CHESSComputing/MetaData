@@ -11,6 +11,7 @@ import (
 	srvConfig "github.com/CHESSComputing/golib/config"
 	mongo "github.com/CHESSComputing/golib/mongo"
 	utils "github.com/CHESSComputing/golib/utils"
+	bson "go.mongodb.org/mongo-driver/bson"
 )
 
 // helper function to validate input data record against schema
@@ -59,7 +60,7 @@ func preprocess(rec map[string]any) map[string]any {
 */
 
 // helper function to insert data into backend DB
-func insertData(sname string, rec map[string]any, attrs, sep, div string) (string, error) {
+func insertData(sname string, rec map[string]any, attrs, sep, div string, updateRecord bool) (string, error) {
 	// load our schema
 	if _, err := _smgr.Load(sname); err != nil {
 		msg := fmt.Sprintf("unable to load %s error %v", sname, err)
@@ -101,7 +102,13 @@ func insertData(sname string, rec map[string]any, attrs, sep, div string) (strin
 
 	// check if given path exist on file system
 	_, err := os.Stat(path)
-	if err == nil {
+	if err != nil {
+		msg := fmt.Sprintf("No files found associated with DataLocationRaw=%s, error=%v", path, err)
+		log.Printf("ERROR: %s", msg)
+		return did, errors.New(msg)
+	}
+	// based on updateRecord decide if we'll insert or update record
+	if updateRecord {
 		rec["path"] = path
 		// add record to mongo DB
 		var records []map[string]any
@@ -115,7 +122,23 @@ func insertData(sname string, rec map[string]any, attrs, sep, div string) (strin
 		}
 		return did, err
 	}
-	msg := fmt.Sprintf("No files found associated with DataLocationRaw=%s, error=%v", path, err)
-	log.Printf("ERROR: %s", msg)
-	return did, errors.New(msg)
+
+	// check if did already exist in MongoDB
+	spec := bson.M{"did": did}
+	records := mongo.Get(
+		srvConfig.Config.CHESSMetaData.MongoDB.DBName,
+		srvConfig.Config.CHESSMetaData.MongoDB.DBColl,
+		spec, 0, 1)
+	if len(records) > 0 {
+		msg := fmt.Sprintf("Record with did=%s found in MetaData database %+v", did, records)
+		return did, errors.New(msg)
+	}
+
+	// insert record to mongodb
+	err = mongo.InsertRecord(
+		srvConfig.Config.CHESSMetaData.MongoDB.DBName,
+		srvConfig.Config.CHESSMetaData.MongoDB.DBColl,
+		rec)
+
+	return did, err
 }
