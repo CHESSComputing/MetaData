@@ -114,7 +114,11 @@ func DataHandler(c *gin.Context) {
 	attrs := srvConfig.Config.DID.Attributes
 	sep := srvConfig.Config.DID.Separator
 	div := srvConfig.Config.DID.Divider
-	did, err := insertData(schema, record, attrs, sep, div)
+	updateRecord := false
+	if c.Request.Method == "PUT" {
+		updateRecord = true
+	}
+	did, err := insertData(schema, record, attrs, sep, div, updateRecord)
 	if err != nil {
 		rec := services.Response("MetaData", http.StatusInternalServerError, services.InsertError, err)
 		c.JSON(http.StatusInternalServerError, rec)
