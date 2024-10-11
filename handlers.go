@@ -38,7 +38,10 @@ func RecordHandler(c *gin.Context) {
 	}
 	var records []map[string]any
 	spec := bson.M{"did": params.DID}
-	records = mongo.Get(srvConfig.Config.CHESSMetaData.DBName, srvConfig.Config.CHESSMetaData.DBColl, spec, 0, -1)
+	records = mongo.Get(
+		srvConfig.Config.CHESSMetaData.DBName,
+		srvConfig.Config.CHESSMetaData.DBColl,
+		spec, 0, -1)
 	if Verbose > 0 {
 		log.Println("RecordHandler", spec, records)
 	}
@@ -180,6 +183,8 @@ func QueryHandler(c *gin.Context) {
 	query := rec.ServiceQuery.Query
 	idx := rec.ServiceQuery.Idx
 	limit := rec.ServiceQuery.Limit
+	sortOrder := rec.ServiceQuery.SortOrder
+	sortKeys := rec.ServiceQuery.SortKeys
 
 	spec, err := ParseQuery(query)
 	if Verbose > 0 {
@@ -195,7 +200,17 @@ func QueryHandler(c *gin.Context) {
 	nrecords := 0
 	if spec != nil {
 		nrecords = mongo.Count(srvConfig.Config.CHESSMetaData.DBName, srvConfig.Config.CHESSMetaData.DBColl, spec)
-		records = mongo.Get(srvConfig.Config.CHESSMetaData.DBName, srvConfig.Config.CHESSMetaData.DBColl, spec, idx, limit)
+		if len(sortKeys) > 0 {
+			records = mongo.GetSorted(
+				srvConfig.Config.CHESSMetaData.DBName,
+				srvConfig.Config.CHESSMetaData.DBColl,
+				spec, sortKeys, sortOrder, idx, limit)
+		} else {
+			records = mongo.Get(
+				srvConfig.Config.CHESSMetaData.DBName,
+				srvConfig.Config.CHESSMetaData.DBColl,
+				spec, idx, limit)
+		}
 	}
 	if Verbose > 0 {
 		log.Printf("spec %v nrecords %d return idx=%d limit=%d", spec, nrecords, idx, limit)
