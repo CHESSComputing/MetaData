@@ -9,6 +9,7 @@ import (
 	"time"
 
 	srvConfig "github.com/CHESSComputing/golib/config"
+	"github.com/CHESSComputing/golib/globus"
 	mongo "github.com/CHESSComputing/golib/mongo"
 	utils "github.com/CHESSComputing/golib/utils"
 	bson "go.mongodb.org/mongo-driver/bson"
@@ -59,6 +60,18 @@ func preprocess(rec map[string]any) map[string]any {
 }
 */
 
+// helper function to create globus link
+func globusLink(rec map[string]any) (string, error) {
+	v, ok := rec["data_location_raw"]
+	if !ok {
+		return "", errors.New("no data_location_raw attribute in meta-data record")
+	}
+	path := v.(string)
+	pat := "CHESS Raw"
+	gurl, err := globus.ChessGlobusLink(pat, path)
+	return gurl, err
+}
+
 // helper function to insert data into backend DB
 func insertData(sname string, rec map[string]any, attrs, sep, div string, updateRecord bool) (string, error) {
 	// load our schema
@@ -80,6 +93,9 @@ func insertData(sname string, rec map[string]any, attrs, sep, div string, update
 	}
 	rec["schema_file"] = sname
 	rec["schema"] = schemaName(sname)
+	if link, err := globusLink(rec); err == nil {
+		rec["globus_link"] = link
+	}
 	// main attributes to work with
 	var path string
 	if v, ok := rec["data_location_raw"]; ok {
