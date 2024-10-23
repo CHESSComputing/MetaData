@@ -11,6 +11,7 @@ import (
 	srvConfig "github.com/CHESSComputing/golib/config"
 	lexicon "github.com/CHESSComputing/golib/lexicon"
 	mongo "github.com/CHESSComputing/golib/mongo"
+	ql "github.com/CHESSComputing/golib/ql"
 	services "github.com/CHESSComputing/golib/services"
 	"github.com/gin-gonic/gin"
 	bson "go.mongodb.org/mongo-driver/bson"
@@ -149,7 +150,7 @@ func QueryCountHandler(c *gin.Context) {
 	// get all attributes we need
 	query := rec.ServiceQuery.Query
 
-	spec, err := ParseQuery(query)
+	spec, err := ql.ParseQuery(query)
 	if Verbose > 0 {
 		log.Printf("search query='%s' spec=%+v", query, spec)
 	}
@@ -186,7 +187,7 @@ func QueryHandler(c *gin.Context) {
 	sortOrder := rec.ServiceQuery.SortOrder
 	sortKeys := rec.ServiceQuery.SortKeys
 
-	spec, err := ParseQuery(query)
+	spec, err := ql.ParseQuery(query)
 	if Verbose > 0 {
 		log.Printf("search query='%s' spec=%+v", query, spec)
 	}
