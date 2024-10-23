@@ -41,7 +41,7 @@ func ParseQuery(query string) (bson.M, error) {
 					spec["_id"] = oid
 				}
 			}
-			return spec, nil
+			return adjustQuery(spec), nil
 		}
 		log.Printf("ERROR: unable to parse input query '%s' error %v", query, err)
 		return nil, err
