@@ -56,7 +56,7 @@ func SummaryHandler(c *gin.Context) {
 		if err == nil {
 			summary[field] = records
 		} else {
-			log.Println("ERROR: fail to look up %s, %v, error %v", field, filter, err)
+			log.Printf("ERROR: fail to look up %s, %v, error %v", field, filter, err)
 		}
 	}
 	c.JSON(http.StatusOK, summary)
