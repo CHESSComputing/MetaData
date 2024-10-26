@@ -28,6 +28,40 @@ func MetaDetailsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, records)
 }
 
+// SummaryHandler handles queries via GET requests
+func SummaryHandler(c *gin.Context) {
+	summary := make(map[string]any)
+	var attrs []string
+	if err := c.BindJSON(&attrs); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON"})
+		return
+
+	}
+
+	// total number of records
+	spec := bson.M{}
+	nrec := mongo.Count(
+		srvConfig.Config.CHESSMetaData.DBName,
+		srvConfig.Config.CHESSMetaData.DBColl,
+		spec)
+	summary["total"] = nrec
+
+	// find unique values of attributes
+	filter := bson.D{}
+	for _, field := range attrs {
+		records, err := mongo.Distinct(
+			srvConfig.Config.CHESSMetaData.DBName,
+			srvConfig.Config.CHESSMetaData.DBColl,
+			field, filter)
+		if err == nil {
+			summary[field] = records
+		} else {
+			log.Println("ERROR: fail to look up %s, %v, error %v", field, filter, err)
+		}
+	}
+	c.JSON(http.StatusOK, summary)
+}
+
 // RecordHandler handles queries via GET requests
 func RecordHandler(c *gin.Context) {
 	var params MetaParams
