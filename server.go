@@ -3,6 +3,7 @@ package main
 import (
 	"embed"
 	"log"
+	"time"
 
 	srvConfig "github.com/CHESSComputing/golib/config"
 	lexicon "github.com/CHESSComputing/golib/lexicon"
@@ -48,6 +49,11 @@ func Server() {
 
 	// init Verbose
 	Verbose = srvConfig.Config.CHESSMetaData.WebServer.Verbose
+	if srvConfig.Config.CHESSMetaData.SchemaRenewInterval == 0 {
+		SchemaRenewInterval = time.Duration(1 * 60 * 60 * time.Second) // by default renew every 1 hour
+	} else {
+		SchemaRenewInterval = time.Duration(srvConfig.Config.CHESSMetaData.SchemaRenewInterval) * time.Second
+	}
 
 	// initialize schema manager
 	_smgr = SchemaManager{}
