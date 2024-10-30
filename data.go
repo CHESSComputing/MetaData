@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	srvConfig "github.com/CHESSComputing/golib/config"
@@ -114,6 +115,11 @@ func insertData(sname string, rec map[string]any, attrs, sep, div string, update
 		// create did out of provided attributes
 		did = utils.CreateDID(rec, attrs, sep, div)
 		rec["did"] = did
+	}
+	// for testing purposes with hey we will replace __PLACEHOLDER__ in DID
+	if strings.Contains(did, "__PLACEHOLDER__") {
+		tstamp := fmt.Sprintf("%d", time.Now().UnixNano())
+		did = strings.Replace(did, "__PLACEHOLDER__", tstamp, -1)
 	}
 
 	// check if given path exist on file system
