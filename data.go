@@ -94,7 +94,7 @@ func insertData(sname string, rec map[string]any, attrs, sep, div string, update
 	if link, err := globusLink(rec); err == nil {
 		rec["globus_link"] = link
 	} else {
-		log.Println("ERROR: unable to create globus link %v", err)
+		log.Printf("ERROR: unable to create globus link %v", err)
 	}
 	// main attributes to work with
 	var path string
