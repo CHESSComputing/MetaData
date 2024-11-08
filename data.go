@@ -81,9 +81,6 @@ func insertData(sname string, rec map[string]any, attrs, sep, div string, update
 		log.Println("ERROR: ", msg)
 		return "", errors.New(msg)
 	}
-	if Verbose > 0 {
-		log.Printf("insert data %+v", rec)
-	}
 
 	// check if data satisfies to one of the schema
 	if err := validateData(sname, rec); err != nil {
@@ -156,6 +153,9 @@ func insertData(sname string, rec map[string]any, attrs, sep, div string, update
 	if len(records) > 0 {
 		msg := fmt.Sprintf("Record with did=%s found in MetaData database %+v", did, records)
 		return did, errors.New(msg)
+	}
+	if Verbose > 0 {
+		log.Printf("insert data %+v", rec)
 	}
 
 	// insert record to mongodb
