@@ -4,8 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -96,17 +94,6 @@ func insertData(sname string, rec map[string]any, attrs, sep, div string, update
 	} else {
 		log.Printf("ERROR: unable to create globus link %v", err)
 	}
-	// main attributes to work with
-	var path string
-	if v, ok := rec["data_location_raw"]; ok {
-		path = v.(string)
-	} else {
-		path = filepath.Join("/tmp", os.Getenv("USER")) // for testing purposes
-		if _, err := os.Stat(path); os.IsNotExist(err) {
-			log.Printf("Directory %s does not exist, will use /tmp", path)
-			path = "/tmp"
-		}
-	}
 	// generate unique id
 	didValue, ok := rec["did"]
 	did := fmt.Sprintf("%s", didValue)
@@ -121,16 +108,10 @@ func insertData(sname string, rec map[string]any, attrs, sep, div string, update
 		did = strings.Replace(did, "__PLACEHOLDER__", tstamp, -1)
 	}
 
-	// check if given path exist on file system
-	_, err := os.Stat(path)
-	if err != nil {
-		msg := fmt.Sprintf("No files found associated with DataLocationRaw=%s, error=%v", path, err)
-		log.Printf("ERROR: %s", msg)
-		return did, errors.New(msg)
-	}
 	// based on updateRecord decide if we'll insert or update record
+	var err error
 	if updateRecord {
-		rec["path"] = path
+		//         rec["path"] = path
 		// add record to mongo DB
 		var records []map[string]any
 		records = append(records, rec)
@@ -139,7 +120,7 @@ func insertData(sname string, rec map[string]any, attrs, sep, div string, update
 			srvConfig.Config.CHESSMetaData.MongoDB.DBColl,
 			"did", records)
 		if err != nil {
-			log.Printf("ERROR: unable to MongoUpsert for did=%s path=%s, error=%v", did, path, err)
+			log.Printf("ERROR: unable to MongoUpsert for did=%s, error=%v", did, err)
 		}
 		return did, err
 	}
