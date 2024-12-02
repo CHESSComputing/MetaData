@@ -11,7 +11,6 @@ import (
 	"github.com/CHESSComputing/golib/globus"
 	mongo "github.com/CHESSComputing/golib/mongo"
 	utils "github.com/CHESSComputing/golib/utils"
-	bson "go.mongodb.org/mongo-driver/bson"
 )
 
 // helper function to validate input data record against schema
@@ -126,7 +125,7 @@ func insertData(sname string, rec map[string]any, attrs, sep, div string, update
 	}
 
 	// check if did already exist in MongoDB
-	spec := bson.M{"did": did}
+	spec := map[string]any{"did": did}
 	records := mongo.Get(
 		srvConfig.Config.CHESSMetaData.MongoDB.DBName,
 		srvConfig.Config.CHESSMetaData.MongoDB.DBColl,

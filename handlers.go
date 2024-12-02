@@ -39,7 +39,7 @@ func SummaryHandler(c *gin.Context) {
 	}
 
 	// total number of records
-	spec := bson.M{}
+	spec := map[string]any{}
 	nrec := mongo.Count(
 		srvConfig.Config.CHESSMetaData.DBName,
 		srvConfig.Config.CHESSMetaData.DBColl,
@@ -72,7 +72,7 @@ func RecordHandler(c *gin.Context) {
 		return
 	}
 	var records []map[string]any
-	spec := bson.M{"did": params.DID}
+	spec := map[string]any{"did": params.DID}
 	records = mongo.Get(
 		srvConfig.Config.CHESSMetaData.DBName,
 		srvConfig.Config.CHESSMetaData.DBColl,

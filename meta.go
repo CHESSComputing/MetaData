@@ -5,7 +5,6 @@ import (
 
 	srvConfig "github.com/CHESSComputing/golib/config"
 	mongo "github.com/CHESSComputing/golib/mongo"
-	bson "go.mongodb.org/mongo-driver/bson"
 	// bson "gopkg.in/mgo.v2/bson"
 )
 
@@ -52,7 +51,7 @@ func (m *MetaData) mongoUpsert(key string) {
 
 // remove MetaData record from MongoDB
 func (m *MetaData) mongoRemove() {
-	spec := bson.M{"id": m.ID}
+	spec := map[string]any{"id": m.ID}
 	mongo.Remove(
 		srvConfig.Config.MetaData.MongoDB.DBName,
 		srvConfig.Config.MetaData.MongoDB.DBColl,
