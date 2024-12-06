@@ -4,7 +4,7 @@ import (
 	"log"
 
 	srvConfig "github.com/CHESSComputing/golib/config"
-	mongo "github.com/CHESSComputing/golib/mongo"
+	docdb "github.com/CHESSComputing/golib/docdb"
 	// bson "gopkg.in/mgo.v2/bson"
 )
 
@@ -17,7 +17,7 @@ type MetaData struct {
 	Tags        []string `json:"tags"`
 }
 
-// Record converts MetaData to MongoDB record
+// Record converts MetaData to docdb record
 func (m *MetaData) Record() map[string]any {
 	rec := make(map[string]any)
 	rec["id"] = m.ID
@@ -28,38 +28,38 @@ func (m *MetaData) Record() map[string]any {
 	return rec
 }
 
-// insert MetaData record to MongoDB
-func (m *MetaData) mongoInsert() {
+// insert MetaData record to docdb
+func (m *MetaData) docdbInsert() {
 	var records []map[string]any
 	records = append(records, m.Record())
-	mongo.Insert(
+	docdb.Insert(
 		srvConfig.Config.MetaData.MongoDB.DBName,
 		srvConfig.Config.MetaData.MongoDB.DBColl,
 		records)
 }
 
-// upsert MetaData record to MongoDB using given key
-func (m *MetaData) mongoUpsert(key string) {
+// upsert MetaData record to docdb using given key
+func (m *MetaData) docdbUpsert(key string) {
 	var records []map[string]any
 	records = append(records, m.Record())
-	mongo.Upsert(
+	docdb.Upsert(
 		srvConfig.Config.MetaData.MongoDB.DBName,
 		srvConfig.Config.MetaData.MongoDB.DBColl,
 		key,
 		records)
 }
 
-// remove MetaData record from MongoDB
-func (m *MetaData) mongoRemove() {
+// remove MetaData record from docdb
+func (m *MetaData) docdbRemove() {
 	spec := map[string]any{"id": m.ID}
-	mongo.Remove(
+	docdb.Remove(
 		srvConfig.Config.MetaData.MongoDB.DBName,
 		srvConfig.Config.MetaData.MongoDB.DBColl,
 		spec)
 }
 
 // global list of existing meta-data records
-// should be replaced with permistent MongoDB storage
+// should be replaced with permistent docdb storage
 var _metaData []MetaData
 
 // helper function to return existing meta-data

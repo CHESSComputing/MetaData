@@ -8,8 +8,8 @@ import (
 	"time"
 
 	srvConfig "github.com/CHESSComputing/golib/config"
+	docdb "github.com/CHESSComputing/golib/docdb"
 	"github.com/CHESSComputing/golib/globus"
-	mongo "github.com/CHESSComputing/golib/mongo"
 	utils "github.com/CHESSComputing/golib/utils"
 )
 
@@ -111,22 +111,22 @@ func insertData(sname string, rec map[string]any, attrs, sep, div string, update
 	var err error
 	if updateRecord {
 		//         rec["path"] = path
-		// add record to mongo DB
+		// add record to docdb DB
 		var records []map[string]any
 		records = append(records, rec)
-		err = mongo.Upsert(
+		err = docdb.Upsert(
 			srvConfig.Config.CHESSMetaData.MongoDB.DBName,
 			srvConfig.Config.CHESSMetaData.MongoDB.DBColl,
 			"did", records)
 		if err != nil {
-			log.Printf("ERROR: unable to MongoUpsert for did=%s, error=%v", did, err)
+			log.Printf("ERROR: unable to docdbUpsert for did=%s, error=%v", did, err)
 		}
 		return did, err
 	}
 
-	// check if did already exist in MongoDB
+	// check if did already exist in docdb
 	spec := map[string]any{"did": did}
-	records := mongo.Get(
+	records := docdb.Get(
 		srvConfig.Config.CHESSMetaData.MongoDB.DBName,
 		srvConfig.Config.CHESSMetaData.MongoDB.DBColl,
 		spec, 0, 1)
@@ -138,11 +138,12 @@ func insertData(sname string, rec map[string]any, attrs, sep, div string, update
 		log.Printf("insert data %+v", rec)
 	}
 
-	// insert record to mongodb
-	err = mongo.InsertRecord(
+	// insert record to docdb
+	err = docdb.InsertRecord(
 		srvConfig.Config.CHESSMetaData.MongoDB.DBName,
 		srvConfig.Config.CHESSMetaData.MongoDB.DBColl,
 		rec)
+	log.Println("docdb.InsertRecord", err)
 
 	return did, err
 }

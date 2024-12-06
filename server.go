@@ -6,8 +6,8 @@ import (
 	"time"
 
 	srvConfig "github.com/CHESSComputing/golib/config"
+	docdb "github.com/CHESSComputing/golib/docdb"
 	lexicon "github.com/CHESSComputing/golib/lexicon"
-	mongo "github.com/CHESSComputing/golib/mongo"
 	server "github.com/CHESSComputing/golib/server"
 	utils "github.com/CHESSComputing/golib/utils"
 	"github.com/gin-gonic/gin"
@@ -43,9 +43,9 @@ func setupRouter() *gin.Engine {
 
 // Server defines our HTTP server
 func Server() {
-	// init MongoDB
-	log.Println("init mongo", srvConfig.Config.CHESSMetaData.MongoDB.DBUri)
-	mongo.InitMongoDB(srvConfig.Config.CHESSMetaData.MongoDB.DBUri)
+	// init docdb
+	log.Println("init docdb", srvConfig.Config.CHESSMetaData.MongoDB.DBUri)
+	docdb.InitDocDB(srvConfig.Config.CHESSMetaData.MongoDB.DBUri)
 
 	// init Verbose
 	Verbose = srvConfig.Config.CHESSMetaData.WebServer.Verbose

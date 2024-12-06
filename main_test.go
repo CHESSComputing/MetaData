@@ -10,8 +10,8 @@ import (
 	"testing"
 
 	srvConfig "github.com/CHESSComputing/golib/config"
+	docdb "github.com/CHESSComputing/golib/docdb"
 	"github.com/CHESSComputing/golib/lexicon"
-	mongo "github.com/CHESSComputing/golib/mongo"
 	server "github.com/CHESSComputing/golib/server"
 	utils "github.com/CHESSComputing/golib/utils"
 	"github.com/gin-gonic/gin"
@@ -34,9 +34,9 @@ func initMetaData() {
 	}
 	lexicon.LexiconPatterns = lexPatterns
 
-	// init MongoDB
-	log.Println("init mongo", srvConfig.Config.CHESSMetaData.MongoDB.DBUri)
-	mongo.InitMongoDB(srvConfig.Config.CHESSMetaData.MongoDB.DBUri)
+	// init docdb
+	log.Println("init docdb", srvConfig.Config.CHESSMetaData.MongoDB.DBUri)
+	docdb.InitDocDB(srvConfig.Config.CHESSMetaData.MongoDB.DBUri)
 
 	// init Verbose
 	Verbose = srvConfig.Config.CHESSMetaData.WebServer.Verbose

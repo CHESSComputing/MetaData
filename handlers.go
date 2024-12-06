@@ -9,8 +9,8 @@ import (
 
 	beamlines "github.com/CHESSComputing/golib/beamlines"
 	srvConfig "github.com/CHESSComputing/golib/config"
+	docdb "github.com/CHESSComputing/golib/docdb"
 	lexicon "github.com/CHESSComputing/golib/lexicon"
-	mongo "github.com/CHESSComputing/golib/mongo"
 	ql "github.com/CHESSComputing/golib/ql"
 	services "github.com/CHESSComputing/golib/services"
 	"github.com/gin-gonic/gin"
@@ -39,7 +39,7 @@ func SummaryHandler(c *gin.Context) {
 
 	// total number of records
 	spec := map[string]any{}
-	nrec := mongo.Count(
+	nrec := docdb.Count(
 		srvConfig.Config.CHESSMetaData.DBName,
 		srvConfig.Config.CHESSMetaData.DBColl,
 		spec)
@@ -47,7 +47,7 @@ func SummaryHandler(c *gin.Context) {
 
 	// find unique values of attributes
 	for _, field := range attrs {
-		records, err := mongo.Distinct(
+		records, err := docdb.Distinct(
 			srvConfig.Config.CHESSMetaData.DBName,
 			srvConfig.Config.CHESSMetaData.DBColl,
 			field)
@@ -71,7 +71,7 @@ func RecordHandler(c *gin.Context) {
 	}
 	var records []map[string]any
 	spec := map[string]any{"did": params.DID}
-	records = mongo.Get(
+	records = docdb.Get(
 		srvConfig.Config.CHESSMetaData.DBName,
 		srvConfig.Config.CHESSMetaData.DBColl,
 		spec, 0, -1)
@@ -122,6 +122,7 @@ func parseRequest(c *gin.Context) (services.MetaRecord, error) {
 func DataHandler(c *gin.Context) {
 	rec, err := parseRequest(c)
 	if err != nil {
+		log.Println("ERROR:", err)
 		rec := services.Response("MetaData", http.StatusInternalServerError, services.ParseError, err)
 		c.JSON(http.StatusInternalServerError, rec)
 		return
@@ -141,6 +142,7 @@ func DataHandler(c *gin.Context) {
 	}
 	err = lexicon.ValidateRecord(record)
 	if err != nil {
+		log.Println("ERROR:", err)
 		rec := services.Response("MetaData", http.StatusInternalServerError, services.ValidateError, err)
 		c.JSON(http.StatusInternalServerError, rec)
 		return
@@ -156,6 +158,7 @@ func DataHandler(c *gin.Context) {
 	}
 	did, err := insertData(schema, record, attrs, sep, div, updateRecord)
 	if err != nil {
+		log.Println("ERROR:", err)
 		rec := services.Response("MetaData", http.StatusInternalServerError, services.InsertError, err)
 		c.JSON(http.StatusInternalServerError, rec)
 		return
@@ -174,6 +177,7 @@ func QueryCountHandler(c *gin.Context) {
 
 	rec, err := parseQueryRequest(c)
 	if err != nil {
+		log.Println("ERROR:", err)
 		rec := services.Response("MetaData", http.StatusInternalServerError, services.ParseError, err)
 		c.JSON(http.StatusInternalServerError, rec)
 		return
@@ -187,6 +191,7 @@ func QueryCountHandler(c *gin.Context) {
 		log.Printf("search query='%s' spec=%+v", query, spec)
 	}
 	if err != nil {
+		log.Println("ERROR:", err)
 		rec := services.Response("MetaData", http.StatusInternalServerError, services.ParseError, err)
 		c.JSON(http.StatusInternalServerError, rec)
 		return
@@ -194,7 +199,7 @@ func QueryCountHandler(c *gin.Context) {
 
 	nrecords := 0
 	if spec != nil {
-		nrecords = mongo.Count(srvConfig.Config.CHESSMetaData.DBName, srvConfig.Config.CHESSMetaData.DBColl, spec)
+		nrecords = docdb.Count(srvConfig.Config.CHESSMetaData.DBName, srvConfig.Config.CHESSMetaData.DBColl, spec)
 	}
 	if Verbose > 0 {
 		log.Printf("spec %v nrecords %d", spec, nrecords)
@@ -207,6 +212,7 @@ func QueryHandler(c *gin.Context) {
 
 	rec, err := parseQueryRequest(c)
 	if err != nil {
+		log.Println("ERROR:", err)
 		rec := services.Response("MetaData", http.StatusInternalServerError, services.ParseError, err)
 		c.JSON(http.StatusInternalServerError, rec)
 		return
@@ -224,6 +230,7 @@ func QueryHandler(c *gin.Context) {
 		log.Printf("search query='%s' spec=%+v", query, spec)
 	}
 	if err != nil {
+		log.Println("ERROR:", err)
 		rec := services.Response("MetaData", http.StatusInternalServerError, services.ParseError, err)
 		c.JSON(http.StatusInternalServerError, rec)
 		return
@@ -232,14 +239,14 @@ func QueryHandler(c *gin.Context) {
 	var records []map[string]any
 	nrecords := 0
 	if spec != nil {
-		nrecords = mongo.Count(srvConfig.Config.CHESSMetaData.DBName, srvConfig.Config.CHESSMetaData.DBColl, spec)
+		nrecords = docdb.Count(srvConfig.Config.CHESSMetaData.DBName, srvConfig.Config.CHESSMetaData.DBColl, spec)
 		if len(sortKeys) > 0 {
-			records = mongo.GetSorted(
+			records = docdb.GetSorted(
 				srvConfig.Config.CHESSMetaData.DBName,
 				srvConfig.Config.CHESSMetaData.DBColl,
 				spec, sortKeys, sortOrder, idx, limit)
 		} else {
-			records = mongo.Get(
+			records = docdb.Get(
 				srvConfig.Config.CHESSMetaData.DBName,
 				srvConfig.Config.CHESSMetaData.DBColl,
 				spec, idx, limit)
