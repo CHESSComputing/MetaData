@@ -11,7 +11,6 @@ import (
 	"time"
 
 	srvConfig "github.com/CHESSComputing/golib/config"
-	mongo "github.com/CHESSComputing/golib/mongo"
 	server "github.com/CHESSComputing/golib/server"
 	utils "github.com/CHESSComputing/golib/utils"
 	"github.com/gin-gonic/gin"
@@ -403,7 +402,7 @@ func htmlInputs(rec map[string]any) []template.HTML {
 	// use attrs to adjust html form
 	// it was user for adjustable attributes
 	var attrs []string
-	for _, k := range mongo.MapKeys(rec) {
+	for _, k := range utils.MapKeys(rec) {
 		var v string
 		switch vvv := rec[k].(type) {
 		case []string:
