@@ -14,7 +14,6 @@ import (
 	ql "github.com/CHESSComputing/golib/ql"
 	services "github.com/CHESSComputing/golib/services"
 	"github.com/gin-gonic/gin"
-	bson "go.mongodb.org/mongo-driver/bson"
 )
 
 // MetaParams represents /record?did=bla end-point
@@ -47,16 +46,15 @@ func SummaryHandler(c *gin.Context) {
 	summary["total"] = nrec
 
 	// find unique values of attributes
-	filter := bson.D{}
 	for _, field := range attrs {
 		records, err := mongo.Distinct(
 			srvConfig.Config.CHESSMetaData.DBName,
 			srvConfig.Config.CHESSMetaData.DBColl,
-			field, filter)
+			field)
 		if err == nil {
 			summary[field] = records
 		} else {
-			log.Printf("ERROR: fail to look up %s, %v, error %v", field, filter, err)
+			log.Printf("ERROR: fail to look up %s, error %v", field, err)
 		}
 	}
 	c.JSON(http.StatusOK, summary)
