@@ -30,6 +30,7 @@ func setupRouter() *gin.Engine {
 	routes := []server.Route{
 		server.Route{Method: "GET", Path: "/meta", Handler: MetaDetailsHandler, Authorized: false},
 		server.Route{Method: "GET", Path: "/record", Handler: RecordHandler, Authorized: false},
+		server.Route{Method: "GET", Path: "/records", Handler: RecordsHandler, Authorized: true},
 		server.Route{Method: "PUT", Path: "/", Handler: DataHandler, Authorized: true, Scope: "write"},
 		server.Route{Method: "POST", Path: "/", Handler: DataHandler, Authorized: true, Scope: "write"},
 		server.Route{Method: "POST", Path: "/search", Handler: QueryHandler, Authorized: true},

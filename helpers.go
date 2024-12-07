@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"html/template"
@@ -526,4 +527,24 @@ func parseValue(schema *Schema, key string, items []string) (any, error) {
 	msg := fmt.Sprintf("Unable to parse form value for key %s", key)
 	log.Printf("ERROR: %s", msg)
 	return 0, errors.New(msg)
+}
+
+// helper function to write data in NDJSON data format
+func handleNDJSON(c *gin.Context, records []map[string]any) {
+	// Set the Content-Type header to NDJSON
+	c.Header("Content-Type", "application/x-ndjson")
+	c.Status(http.StatusOK)
+
+	// Use the Gin context's Writer to stream the response
+	for _, record := range records {
+		// Marshal each record to JSON
+		line, err := json.Marshal(record)
+		if err != nil {
+			// Handle JSON marshalling error
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to serialize record"})
+			return
+		}
+		// Write each JSON line followed by a newline
+		_, _ = c.Writer.Write(append(line, '\n'))
+	}
 }

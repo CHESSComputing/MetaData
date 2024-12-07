@@ -81,6 +81,45 @@ func RecordHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, records)
 }
 
+// helper function to parse spec (JSON dict) from HTTP request
+func parseSpec(c *gin.Context) (map[string]any, error) {
+	var spec map[string]any
+	defer c.Request.Body.Close()
+	body, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		return spec, err
+	}
+	err = json.Unmarshal(body, &spec)
+	if err != nil {
+		return spec, err
+	}
+	return spec, nil
+}
+
+// RecordsHandler handles requests to get set of records for provided meta parametes
+func RecordsHandler(c *gin.Context) {
+	spec, err := parseSpec(c)
+	if err != nil {
+		log.Println("ERROR:", err)
+		rec := services.Response("MetaData", http.StatusInternalServerError, services.ParseError, err)
+		c.JSON(http.StatusInternalServerError, rec)
+		return
+	}
+	var records []map[string]any
+	records = docdb.Get(
+		srvConfig.Config.CHESSMetaData.DBName,
+		srvConfig.Config.CHESSMetaData.DBColl,
+		spec, 0, -1)
+	if Verbose > 0 {
+		log.Println("RecordsHandler", spec, records)
+	}
+	if c.GetHeader("Accept") == "application/x-ndjson" {
+		handleNDJSON(c, records)
+		return
+	}
+	c.JSON(http.StatusOK, records)
+}
+
 // helper function to parse incoming HTTP request into ServiceRequest structure
 func parseQueryRequest(c *gin.Context) (services.ServiceRequest, error) {
 	var rec services.ServiceRequest
