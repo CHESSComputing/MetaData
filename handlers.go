@@ -113,7 +113,8 @@ func RecordsHandler(c *gin.Context) {
 	if Verbose > 0 {
 		log.Println("RecordsHandler", spec, records)
 	}
-	if c.GetHeader("Accept") == "application/x-ndjson" {
+	accept := c.GetHeader("Accept")
+	if accept == "application/x-ndjson" || accept == "application/ndjson" {
 		handleNDJSON(c, records)
 		return
 	}
