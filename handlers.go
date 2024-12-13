@@ -265,15 +265,22 @@ func QueryHandler(c *gin.Context) {
 	sortOrder := rec.ServiceQuery.SortOrder
 	sortKeys := rec.ServiceQuery.SortKeys
 
-	spec, err := ql.ParseQuery(query)
-	if Verbose > 0 {
-		log.Printf("search query='%s' spec=%+v", query, spec)
-	}
-	if err != nil {
-		log.Println("ERROR:", err)
-		rec := services.Response("MetaData", http.StatusInternalServerError, services.ParseError, err)
-		c.JSON(http.StatusInternalServerError, rec)
-		return
+	spec := rec.ServiceQuery.Spec
+	if spec != nil {
+		if Verbose > 0 {
+			log.Printf("use rec.ServiceQuery.Spec=%+v", spec)
+		}
+	} else {
+		spec, err = ql.ParseQuery(query)
+		if Verbose > 0 {
+			log.Printf("search query='%s' spec=%+v", query, spec)
+		}
+		if err != nil {
+			log.Println("ERROR:", err)
+			rec := services.Response("MetaData", http.StatusInternalServerError, services.ParseError, err)
+			c.JSON(http.StatusInternalServerError, rec)
+			return
+		}
 	}
 
 	var records []map[string]any
@@ -293,7 +300,7 @@ func QueryHandler(c *gin.Context) {
 		}
 	}
 	if Verbose > 0 {
-		log.Printf("spec %v nrecords %d return idx=%d limit=%d", spec, nrecords, idx, limit)
+		log.Printf("spec %v sortedKeys %v nrecords %d return idx=%d limit=%d", spec, sortKeys, nrecords, idx, limit)
 	}
 	//     r := services.Response("MetaData", http.StatusOK, services.OK, nil)
 	//     r.ServiceQuery = services.ServiceQuery{Query: query, Spec: spec, Idx: idx, Limit: limit}
