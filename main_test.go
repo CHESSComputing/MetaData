@@ -35,8 +35,10 @@ func initMetaData() {
 	lexicon.LexiconPatterns = lexPatterns
 
 	// init docdb
-	log.Println("init docdb", srvConfig.Config.CHESSMetaData.MongoDB.DBUri)
-	docdb.InitDocDB(srvConfig.Config.CHESSMetaData.MongoDB.DBUri)
+	metaDB, err = docdb.InitializeDocDB(srvConfig.Config.CHESSMetaData.MongoDB.DBUri)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// init Verbose
 	Verbose = srvConfig.Config.CHESSMetaData.WebServer.Verbose

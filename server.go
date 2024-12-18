@@ -25,6 +25,9 @@ var Verbose int
 var _beamlines []string
 var _smgr SchemaManager
 
+// metaDB object
+var metaDB docdb.DocDB
+
 // helper function to setup our router
 func setupRouter() *gin.Engine {
 	routes := []server.Route{
@@ -44,9 +47,13 @@ func setupRouter() *gin.Engine {
 
 // Server defines our HTTP server
 func Server() {
+	var err error
+
 	// init docdb
-	log.Println("init docdb", srvConfig.Config.CHESSMetaData.MongoDB.DBUri)
-	docdb.InitDocDB(srvConfig.Config.CHESSMetaData.MongoDB.DBUri)
+	metaDB, err = docdb.InitializeDocDB(srvConfig.Config.CHESSMetaData.MongoDB.DBUri)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// init Verbose
 	Verbose = srvConfig.Config.CHESSMetaData.WebServer.Verbose

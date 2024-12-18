@@ -9,7 +9,6 @@ import (
 
 	beamlines "github.com/CHESSComputing/golib/beamlines"
 	srvConfig "github.com/CHESSComputing/golib/config"
-	docdb "github.com/CHESSComputing/golib/docdb"
 	lexicon "github.com/CHESSComputing/golib/lexicon"
 	ql "github.com/CHESSComputing/golib/ql"
 	services "github.com/CHESSComputing/golib/services"
@@ -39,7 +38,7 @@ func SummaryHandler(c *gin.Context) {
 
 	// total number of records
 	spec := map[string]any{}
-	nrec := docdb.Count(
+	nrec := metaDB.Count(
 		srvConfig.Config.CHESSMetaData.DBName,
 		srvConfig.Config.CHESSMetaData.DBColl,
 		spec)
@@ -47,7 +46,7 @@ func SummaryHandler(c *gin.Context) {
 
 	// find unique values of attributes
 	for _, field := range attrs {
-		records, err := docdb.Distinct(
+		records, err := metaDB.Distinct(
 			srvConfig.Config.CHESSMetaData.DBName,
 			srvConfig.Config.CHESSMetaData.DBColl,
 			field)
@@ -71,7 +70,7 @@ func RecordHandler(c *gin.Context) {
 	}
 	var records []map[string]any
 	spec := map[string]any{"did": params.DID}
-	records = docdb.Get(
+	records = metaDB.Get(
 		srvConfig.Config.CHESSMetaData.DBName,
 		srvConfig.Config.CHESSMetaData.DBColl,
 		spec, 0, -1)
@@ -106,7 +105,7 @@ func RecordsHandler(c *gin.Context) {
 		return
 	}
 	var records []map[string]any
-	records = docdb.Get(
+	records = metaDB.Get(
 		srvConfig.Config.CHESSMetaData.DBName,
 		srvConfig.Config.CHESSMetaData.DBColl,
 		spec, 0, -1)
@@ -239,7 +238,7 @@ func QueryCountHandler(c *gin.Context) {
 
 	nrecords := 0
 	if spec != nil {
-		nrecords = docdb.Count(srvConfig.Config.CHESSMetaData.DBName, srvConfig.Config.CHESSMetaData.DBColl, spec)
+		nrecords = metaDB.Count(srvConfig.Config.CHESSMetaData.DBName, srvConfig.Config.CHESSMetaData.DBColl, spec)
 	}
 	if Verbose > 0 {
 		log.Printf("spec %v nrecords %d", spec, nrecords)
@@ -286,14 +285,14 @@ func QueryHandler(c *gin.Context) {
 	var records []map[string]any
 	nrecords := 0
 	if spec != nil {
-		nrecords = docdb.Count(srvConfig.Config.CHESSMetaData.DBName, srvConfig.Config.CHESSMetaData.DBColl, spec)
+		nrecords = metaDB.Count(srvConfig.Config.CHESSMetaData.DBName, srvConfig.Config.CHESSMetaData.DBColl, spec)
 		if len(sortKeys) > 0 {
-			records = docdb.GetSorted(
+			records = metaDB.GetSorted(
 				srvConfig.Config.CHESSMetaData.DBName,
 				srvConfig.Config.CHESSMetaData.DBColl,
 				spec, sortKeys, sortOrder, idx, limit)
 		} else {
-			records = docdb.Get(
+			records = metaDB.Get(
 				srvConfig.Config.CHESSMetaData.DBName,
 				srvConfig.Config.CHESSMetaData.DBColl,
 				spec, idx, limit)

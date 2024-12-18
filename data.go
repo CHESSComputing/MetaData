@@ -8,7 +8,6 @@ import (
 	"time"
 
 	srvConfig "github.com/CHESSComputing/golib/config"
-	docdb "github.com/CHESSComputing/golib/docdb"
 	"github.com/CHESSComputing/golib/globus"
 	utils "github.com/CHESSComputing/golib/utils"
 )
@@ -111,22 +110,22 @@ func insertData(sname string, rec map[string]any, attrs, sep, div string, update
 	var err error
 	if updateRecord {
 		//         rec["path"] = path
-		// add record to docdb DB
+		// add record to metaDB DB
 		var records []map[string]any
 		records = append(records, rec)
-		err = docdb.Upsert(
+		err = metaDB.Upsert(
 			srvConfig.Config.CHESSMetaData.MongoDB.DBName,
 			srvConfig.Config.CHESSMetaData.MongoDB.DBColl,
 			"did", records)
 		if err != nil {
-			log.Printf("ERROR: unable to docdbUpsert for did=%s, error=%v", did, err)
+			log.Printf("ERROR: unable to metaDB.Upsert for did=%s, error=%v", did, err)
 		}
 		return did, err
 	}
 
-	// check if did already exist in docdb
+	// check if did already exist in metaDB
 	spec := map[string]any{"did": did}
-	records := docdb.Get(
+	records := metaDB.Get(
 		srvConfig.Config.CHESSMetaData.MongoDB.DBName,
 		srvConfig.Config.CHESSMetaData.MongoDB.DBColl,
 		spec, 0, 1)
@@ -138,12 +137,12 @@ func insertData(sname string, rec map[string]any, attrs, sep, div string, update
 		log.Printf("insert data %+v", rec)
 	}
 
-	// insert record to docdb
-	err = docdb.InsertRecord(
+	// insert record to metaDB
+	err = metaDB.InsertRecord(
 		srvConfig.Config.CHESSMetaData.MongoDB.DBName,
 		srvConfig.Config.CHESSMetaData.MongoDB.DBColl,
 		rec)
-	log.Println("docdb.InsertRecord", err)
+	log.Println("metaDB.InsertRecord", err)
 
 	return did, err
 }
