@@ -85,7 +85,7 @@ func Server() {
 	_skipKeys = srvConfig.Config.CHESSMetaData.SkipKeys
 	if len(_skipKeys) == 0 {
 		// default list
-		_skipKeys = []string{"user", "date", "description", "schema_name", "schema_file", "schema", "did", "doi", "doi_url"}
+		_skipKeys = []string{"user", "date", "description", "schema_name", "schema_file", "schema", "did", "doi", "doi_url", "doi_user", "doi_created_ad"}
 	}
 
 	// setup web router and start the service
