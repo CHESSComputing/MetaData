@@ -59,11 +59,14 @@ func preprocess(rec map[string]any) map[string]any {
 
 // helper function to create globus link
 func globusLink(rec map[string]any) (string, error) {
-	v, ok := rec["data_location_raw"]
-	if !ok {
-		return "", errors.New("no data_location_raw attribute in meta-data record")
+	var path string
+	if v, ok := rec["data_location_raw"]; ok {
+		path = v.(string)
+	} else if v, ok := rec["btr_location_raw"]; ok {
+		path = v.(string)
+	} else {
+		return "", errors.New("no data_location_raw or btr_location_raw attribute in meta-data record")
 	}
-	path := v.(string)
 	pat := "CHESS Raw"
 	gurl, err := globus.ChessGlobusLink(pat, path)
 	return gurl, err
