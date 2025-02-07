@@ -3,7 +3,7 @@ module github.com/CHESSComputing/MetaData
 go 1.23.5
 
 require (
-	github.com/CHESSComputing/golib v0.6.4
+	github.com/CHESSComputing/golib v0.6.5
 	github.com/gin-gonic/gin v1.10.0
 	gopkg.in/yaml.v2 v2.4.0
 )
