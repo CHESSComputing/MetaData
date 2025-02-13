@@ -60,12 +60,16 @@ func preprocess(rec map[string]any) map[string]any {
 // helper function to create globus link
 func globusLink(rec map[string]any) (string, error) {
 	var path string
-	if v, ok := rec["data_location_raw"]; ok {
-		path = v.(string)
-	} else if v, ok := rec["btr_location_raw"]; ok {
-		path = v.(string)
-	} else {
-		return "", errors.New("no data_location_raw or btr_location_raw attribute in meta-data record")
+	locAttrs := srvConfig.Config.CHESSMetaData.DataLocationAttributes
+	for _, attr := range locAttrs {
+		if v, ok := rec[attr]; ok {
+			path = v.(string)
+			break
+		}
+	}
+	if path == "" {
+		msg := fmt.Sprintf("no data location attributes %v found in meta-data record", locAttrs)
+		return "", errors.New(msg)
 	}
 	pat := "CHESS Raw"
 	gurl, err := globus.ChessGlobusLink(pat, path)
