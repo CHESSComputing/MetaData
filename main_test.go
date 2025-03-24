@@ -19,7 +19,10 @@ import (
 
 // helper function to initialize MetaData for tests
 func initMetaData() {
-	srvConfig.Init()
+	config := os.Getenv("FOXDEN_CONFIG")
+	if cobj, err := srvConfig.ParseConfig(config); err == nil {
+		srvConfig.Config = &cobj
+	}
 	log.SetFlags(0)
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	// current directory is a <pwd>/test
@@ -60,7 +63,6 @@ var router *gin.Engine
 
 func initServer() {
 	if router == nil {
-		// we need to initialize meta data only once since it calls srvConfig.Init()
 		initMetaData()
 	}
 	if router == nil {
