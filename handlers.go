@@ -211,6 +211,30 @@ func DataHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
+// UpdateParams represents JSON struct used by UpdateHandler
+type UpdateParams struct {
+	Doi    string `json:"doi"`
+	Did    string `json:"did"`
+	Public bool   `json:"public"`
+}
+
+// UpdateDoiHandler handles POST upload of meta-data record
+func UpdateDoiHandler(c *gin.Context) {
+	// Bind JSON payload to struct
+	var rec UpdateParams
+	if err := c.ShouldBindJSON(&rec); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	err := updateDoiData(rec.Did, rec.Doi, rec.Public)
+	if err != nil {
+		log.Println("ERROR:", err)
+		rec := services.Response("MetaData", http.StatusInternalServerError, services.ParseError, err)
+		c.JSON(http.StatusInternalServerError, rec)
+		return
+	}
+}
+
 // QueryCountHandler handles POST queries
 func QueryCountHandler(c *gin.Context) {
 

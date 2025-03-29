@@ -76,6 +76,21 @@ func globusLink(rec map[string]any) (string, error) {
 	return gurl, err
 }
 
+// helper function to update DOI part of metadata record
+func updateDoiData(did, doi string, public bool) error {
+	spec := make(map[string]any)
+	spec["did"] = did
+	spec["doi"] = doi
+	record := make(map[string]any)
+	record["doi_public"] = true
+	err := metaDB.Update(
+		srvConfig.Config.CHESSMetaData.MongoDB.DBName,
+		srvConfig.Config.CHESSMetaData.MongoDB.DBColl,
+		spec, record)
+	return err
+
+}
+
 // helper function to insert data into backend DB
 func insertData(sname string, rec map[string]any, attrs, sep, div string, updateRecord bool) (string, error) {
 	// load our schema
