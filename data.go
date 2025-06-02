@@ -117,10 +117,12 @@ func insertData(sname string, rec map[string]any, attrs, sep, div string, update
 	// add doi attributes
 	doiAttributes := []string{"doi", "doi_url", "doi_user", "doi_created_at", "doi_public", "doi_provider", "doi_access_metadata"}
 	for _, attr := range doiAttributes {
-		if attr == "doi_public" {
-			rec[attr] = false
-		} else {
-			rec[attr] = ""
+		if _, ok := rec[attr]; !ok {
+			if attr == "doi_public" {
+				rec[attr] = false
+			} else {
+				rec[attr] = ""
+			}
 		}
 	}
 
