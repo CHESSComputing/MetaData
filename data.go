@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -11,6 +12,20 @@ import (
 	"github.com/CHESSComputing/golib/globus"
 	utils "github.com/CHESSComputing/golib/utils"
 )
+
+// HistoryRecord represents history part of metadata record
+type HistoryRecord struct {
+	User      string
+	Timestamp int64
+}
+
+// String provives string representation of history record
+func (h *HistoryRecord) String() string {
+	if val, err := json.Marshal(h); err == nil {
+		return string(val)
+	}
+	return fmt.Sprintf("%+v", h)
+}
 
 // helper function to validate input data record against schema
 func validateData(sname string, rec map[string]any) error {
@@ -91,6 +106,31 @@ func updateDoiData(did, doi string, public bool) error {
 
 }
 
+// helper function to archive record
+func archiveRecord(rec map[string]any) error {
+	var did string
+	if val, ok := rec["did"]; ok {
+		did = val.(string)
+	} else {
+		msg := fmt.Sprintf("unable to find metadata record for did=%s", did)
+		log.Println("ERROR:", msg, "record", rec)
+		return errors.New(msg)
+	}
+	// find original record in foxden metadata database
+	spec := make(map[string]any)
+	spec["did"] = did
+	records := metaDB.Get(
+		srvConfig.Config.CHESSMetaData.MongoDB.DBName,
+		srvConfig.Config.CHESSMetaData.MongoDB.DBColl,
+		spec, 0, 1)
+	if len(records) != 1 {
+		msg := fmt.Sprintf("unable to find metadata record for did=%s", did)
+		return errors.New(msg)
+	}
+	err := metaDB.InsertRecord(srvConfig.Config.CHESSMetaData.MongoDB.DBName, "archive", records[0])
+	return err
+}
+
 // helper function to insert data into backend DB
 func insertData(sname string, rec map[string]any, attrs, sep, div string, updateRecord bool) (string, error) {
 	// load our schema
@@ -112,7 +152,7 @@ func insertData(sname string, rec map[string]any, attrs, sep, div string, update
 	if link, err := globusLink(rec); err == nil {
 		rec["globus_link"] = link
 	} else {
-		log.Printf("ERROR: unable to create globus link %v", err)
+		log.Printf("WARNING: unable to create globus link %v", err)
 	}
 	// add doi attributes
 	doiAttributes := []string{"doi", "doi_url", "doi_user", "doi_created_at", "doi_public", "doi_provider", "doi_access_metadata"}
@@ -143,7 +183,27 @@ func insertData(sname string, rec map[string]any, attrs, sep, div string, update
 	// based on updateRecord decide if we'll insert or update record
 	var err error
 	if updateRecord {
-		//         rec["path"] = path
+		// add original record to foxden archive
+		err = archiveRecord(rec)
+		if err != nil {
+			log.Printf("ERROR: unable to archive record for did=%s, error=%v", did, err)
+			return did, err
+		}
+		// add history part of the record
+		if user, ok := rec["user"]; ok {
+			hrec := HistoryRecord{User: user.(string), Timestamp: time.Now().Unix()}
+			var hrecords []HistoryRecord
+			if val, ok := rec["history"]; ok {
+				hrecords = val.([]HistoryRecord)
+				hrecords = append(hrecords, hrec)
+				rec["history"] = hrecords
+			} else {
+				rec["history"] = []HistoryRecord{hrec}
+			}
+		} else {
+			msg := fmt.Sprintf("Metadata record does not contain user key")
+			return did, errors.New(msg)
+		}
 		// add record to metaDB DB
 		var records []map[string]any
 		records = append(records, rec)
