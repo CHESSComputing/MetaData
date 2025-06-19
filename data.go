@@ -24,7 +24,7 @@ func (h *HistoryRecord) String() string {
 	if val, err := json.Marshal(h); err == nil {
 		return string(val)
 	}
-	return fmt.Sprintf("%+v", h)
+	return fmt.Sprintf("%v", h)
 }
 
 // helper function to validate input data record against schema
