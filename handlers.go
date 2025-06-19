@@ -248,8 +248,13 @@ func QueryCountHandler(c *gin.Context) {
 
 	// get all attributes we need
 	query := rec.ServiceQuery.Query
-
-	spec, err := ql.ParseQuery(query)
+	var spec map[string]any
+	if query == "" && rec.ServiceQuery.Spec != nil {
+		spec = rec.ServiceQuery.Spec
+		err = nil
+	} else {
+		spec, err = ql.ParseQuery(query)
+	}
 	if Verbose > 0 {
 		log.Printf("search query='%s' spec=%+v", query, spec)
 	}
