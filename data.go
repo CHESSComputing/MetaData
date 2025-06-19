@@ -24,7 +24,9 @@ func (h *HistoryRecord) String() string {
 	if val, err := json.Marshal(h); err == nil {
 		return string(val)
 	}
-	return fmt.Sprintf("%v", h)
+	// Avoid recursive call by converting to a non-method type
+	type alias HistoryRecord
+	return fmt.Sprintf("%v", alias(*h))
 }
 
 // helper function to validate input data record against schema
