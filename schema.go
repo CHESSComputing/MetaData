@@ -532,6 +532,8 @@ func validSchemaType(stype string, v interface{}) bool {
 		etype = "list_float"
 	case []float32:
 		etype = "list_float"
+	default:
+		etype = "any"
 	}
 	sv := fmt.Sprintf("%v", v)
 	vtype := fmt.Sprintf("%T", v)
