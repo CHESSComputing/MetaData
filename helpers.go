@@ -371,6 +371,9 @@ func processForm(r *http.Request) (string, map[string]any, error) {
 			desc = strings.Join(items, " ")
 			continue
 		}
+		if k == "user_metadata" {
+			continue
+		}
 		val, err := parseValue(schema, k, items)
 		if err != nil {
 			// check if given key is mandatory or optional
