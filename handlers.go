@@ -3,14 +3,17 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 
 	beamlines "github.com/CHESSComputing/golib/beamlines"
 	srvConfig "github.com/CHESSComputing/golib/config"
 	lexicon "github.com/CHESSComputing/golib/lexicon"
 	ql "github.com/CHESSComputing/golib/ql"
+	"github.com/CHESSComputing/golib/server"
 	services "github.com/CHESSComputing/golib/services"
 	"github.com/gin-gonic/gin"
 )
@@ -339,7 +342,49 @@ func QueryHandler(c *gin.Context) {
 
 // DeleteHandler handles POST queries
 func DeleteHandler(c *gin.Context) {
-	err := errors.New("Not implemented yet")
-	rec := services.Response("MetaData", http.StatusInternalServerError, services.ParseError, err)
-	c.JSON(http.StatusInternalServerError, rec)
+	did := c.Request.FormValue("did")
+	_, user, err := server.GetAuthTokenUser(c)
+	if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "no user found in token", "message": "no user found", "code": services.RemoveError})
+				return
+	}
+	// find user btrs and see if it matches the provided did
+	if srvConfig.Config.Frontend.CheckBtrs && srvConfig.Config.Embed.DocDb == "" {
+		attrs, err := services.UserAttributes(user)
+		if err == nil {
+			// check user btrs and return error if user does not have any associations with Btrs
+			if len(attrs.Btrs) == 0 {
+				msg := fmt.Sprintf("User %s does not associated with any BTRs, delete record is deined", user)
+				log.Println("ERROR:", msg)
+				c.JSON(http.StatusBadRequest, gin.H{"error": "no btr matches", "message": msg, "code": services.RemoveError})
+				return
+			}
+			btrFound := false
+			for _, btr := range attrs.Btrs {
+				if strings.Contains(did, btr) {
+					btrFound = true
+				}
+			}
+			if !btrFound {
+				msg := fmt.Sprintf("User %s BTR does not match did", user)
+				log.Println("ERROR:", msg)
+				c.JSON(http.StatusBadRequest, gin.H{"error": "no btr matches", "message": msg, "code": services.RemoveError})
+				return
+			}
+		}
+	}
+	spec := make(map[string]any)
+	spec["did"] = did
+	err = metaDB.Remove(
+		srvConfig.Config.CHESSMetaData.DBName,
+		srvConfig.Config.CHESSMetaData.DBColl,
+		spec)
+	status := http.StatusOK
+	srvCode := services.OK
+	if err != nil {
+		status = http.StatusBadRequest
+		srvCode = services.RemoveError
+	}
+	rec := services.Response("MetaData", status, srvCode, err)
+	c.JSON(status, rec)
 }
