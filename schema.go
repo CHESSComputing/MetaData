@@ -126,6 +126,7 @@ type SchemaRecord struct {
 	Placeholder string `json:"placeholder"`
 	Units       string `json:"units"`
 	Description string `json:"description"`
+	File        string `json:"file,omitempty"` // Used for inclusion
 }
 
 // Schema provides structure of schema file
@@ -201,6 +202,17 @@ func (s *Schema) Load() error {
 	s.FileName = fname
 	smap := make(map[string]SchemaRecord)
 	for _, r := range records {
+		if r.File != "" {
+			if nestedRecords, err := loadNestedRecords(r.File); err == nil {
+				for _, nr := range nestedRecords {
+					if nr.Key != "" {
+						smap[nr.Key] = nr
+					}
+				}
+			} else {
+				log.Printf("ERROR: unable to load nested schema from file %s, error=%v", r.File, err)
+			}
+		}
 		smap[r.Key] = r
 	}
 	// update schema map
@@ -319,7 +331,9 @@ func (s *Schema) Keys() ([]string, error) {
 		return keys, err
 	}
 	for k, _ := range s.Map {
-		keys = append(keys, k)
+		if k != "" {
+			keys = append(keys, k)
+		}
 	}
 	sort.Sort(utils.StringList(keys))
 	return keys, nil
@@ -572,4 +586,59 @@ func convertYaml(m map[interface{}]interface{}) map[string]interface{} {
 		}
 	}
 	return res
+}
+
+// helper function to load nested schema records
+func loadNestedRecords(filename string) ([]SchemaRecord, error) {
+	var records []SchemaRecord
+	_, err := os.Stat(filename)
+	if err != nil {
+		return records, err
+	}
+	file, err := os.Open(filename)
+	if err != nil {
+		return records, err
+	}
+	defer file.Close()
+	data, err := io.ReadAll(file)
+	if err != nil {
+		return records, err
+	}
+	if strings.HasSuffix(filename, "json") {
+		err = json.Unmarshal(data, &records)
+		if err != nil {
+			return records, err
+		}
+	} else if strings.HasSuffix(filename, "yaml") || strings.HasSuffix(filename, "yml") {
+		var yrecords []map[interface{}]interface{}
+		err = yaml.Unmarshal(data, &yrecords)
+		if err != nil {
+			return records, err
+		}
+		for _, yr := range yrecords {
+			m := convertYaml(yr)
+			smap := SchemaRecord{}
+			for k, v := range m {
+				if k == "key" {
+					smap.Key = v.(string)
+				} else if k == "type" {
+					smap.Type = v.(string)
+				} else if k == "optional" {
+					smap.Optional = v.(bool)
+				} else if k == "description" {
+					smap.Description = v.(string)
+				} else if k == "placeholder" {
+					smap.Placeholder = v.(string)
+				}
+			}
+			records = append(records, smap)
+		}
+	}
+	if Verbose > 1 {
+		log.Printf("### loading %s", filename)
+		for _, r := range records {
+			log.Printf("### record %+v", r)
+		}
+	}
+	return records, nil
 }
