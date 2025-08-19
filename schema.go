@@ -497,6 +497,20 @@ func validDataValue(rec SchemaRecord, v any) bool {
 		if !matched {
 			return false
 		}
+	} else {
+		if rec.Value != nil {
+			sv := fmt.Sprintf("%v", v)
+			matched := false
+			for _, val := range rec.Value.([]any) {
+				sval := fmt.Sprintf("%v", val)
+				if sv == sval {
+					matched = true
+				}
+			}
+			if !matched {
+				return false
+			}
+		}
 	}
 	return true
 }
