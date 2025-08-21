@@ -293,7 +293,7 @@ func (s *Schema) Validate(rec map[string]any) error {
 			// check data value
 			if !validDataValue(m, v) {
 				// check if provided data type can be converted to m.Type
-				msg := fmt.Sprintf("invalid data value for key=%s, type=%s, multiple=%v, value=%v", k, m.Type, m.Multiple, v)
+				msg := fmt.Sprintf("invalid data value for key=%s, type=%s, multiple=%v, value=%v valuetype=%T", k, m.Type, m.Multiple, v, v)
 				log.Printf("ERROR: %s", msg)
 				return errors.New(msg)
 			}
@@ -433,6 +433,12 @@ func (s *Schema) SectionKeys() (map[string][]string, error) {
 // helper function to validate given value with respect to schema one
 // only valid for value of list type
 func validDataValue(rec SchemaRecord, v any) bool {
+	vtype := fmt.Sprintf("%T", v)
+	if rec.Type == vtype {
+		// if data types of schema record and passed value are the same we declare that it is valid data
+		return true
+	}
+	// special treatement for list data types
 	if strings.HasPrefix(rec.Type, "list") {
 		var values []string
 		if rec.Value == nil {
@@ -448,7 +454,6 @@ func validDataValue(rec SchemaRecord, v any) bool {
 		if Verbose > 0 {
 			log.Printf("checking %v of type %T against %+v", v, v, rec)
 		}
-		vtype := fmt.Sprintf("%T", v)
 		if Verbose > 0 {
 			log.Printf("checking v=%v of type %T vtype=%v", v, v, vtype)
 		}
@@ -501,8 +506,16 @@ func validDataValue(rec SchemaRecord, v any) bool {
 		if rec.Value != nil {
 			sv := fmt.Sprintf("%v", v)
 			matched := false
-			for _, val := range rec.Value.([]any) {
-				sval := fmt.Sprintf("%v", val)
+			switch vvv := rec.Value.(type) {
+			case []any:
+				for _, val := range vvv {
+					sval := fmt.Sprintf("%v", val)
+					if sv == sval {
+						matched = true
+					}
+				}
+			case any:
+				sval := fmt.Sprintf("%v", vvv)
 				if sv == sval {
 					matched = true
 				}
