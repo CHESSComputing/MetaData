@@ -196,7 +196,12 @@ func insertData(sname string, rec map[string]any, attrs, sep, div string, update
 			hrec := HistoryRecord{User: user.(string), Timestamp: time.Now().Unix()}
 			var hrecords []HistoryRecord
 			if val, ok := rec["history"]; ok {
-				hrecords = val.([]HistoryRecord)
+				var existingRecords []HistoryRecord
+				if err := json.Unmarshal([]byte(fmt.Sprintf("%v", val)), &existingRecords); err == nil {
+					// perform mapping from rec["history"] which is []any data-type to history records
+					// if successful we use existing records
+					hrecords = existingRecords
+				}
 				hrecords = append(hrecords, hrec)
 				rec["history"] = hrecords
 			} else {
