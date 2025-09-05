@@ -31,16 +31,16 @@ var metaDB docdb.DocDB
 // helper function to setup our router
 func setupRouter() *gin.Engine {
 	routes := []server.Route{
-		server.Route{Method: "GET", Path: "/meta", Handler: MetaDetailsHandler, Authorized: false},
-		server.Route{Method: "GET", Path: "/record", Handler: RecordHandler, Authorized: false},
-		server.Route{Method: "GET", Path: "/records", Handler: RecordsHandler, Authorized: true},
-		server.Route{Method: "PUT", Path: "/updatedoi", Handler: UpdateDoiHandler, Authorized: true, Scope: "write"},
-		server.Route{Method: "PUT", Path: "/", Handler: DataHandler, Authorized: true, Scope: "write"},
-		server.Route{Method: "POST", Path: "/", Handler: DataHandler, Authorized: true, Scope: "write"},
-		server.Route{Method: "POST", Path: "/search", Handler: QueryHandler, Authorized: true},
-		server.Route{Method: "POST", Path: "/summary", Handler: SummaryHandler, Authorized: false},
-		server.Route{Method: "POST", Path: "/count", Handler: QueryCountHandler, Authorized: true},
-		server.Route{Method: "DELETE", Path: "/record", Handler: DeleteHandler, Authorized: true, Scope: "delete"},
+		{Method: "GET", Path: "/meta", Handler: MetaDetailsHandler, Authorized: false},
+		{Method: "GET", Path: "/record", Handler: RecordHandler, Authorized: false},
+		{Method: "GET", Path: "/records", Handler: RecordsHandler, Authorized: true},
+		{Method: "PUT", Path: "/updatedoi", Handler: UpdateDoiHandler, Authorized: true, Scope: "write"},
+		{Method: "PUT", Path: "/", Handler: DataHandler, Authorized: true, Scope: "write"},
+		{Method: "POST", Path: "/", Handler: DataHandler, Authorized: true, Scope: "write"},
+		{Method: "POST", Path: "/search", Handler: QueryHandler, Authorized: true},
+		{Method: "POST", Path: "/summary", Handler: SummaryHandler, Authorized: false},
+		{Method: "POST", Path: "/count", Handler: QueryCountHandler, Authorized: true},
+		{Method: "DELETE", Path: "/record", Handler: DeleteHandler, Authorized: true, Scope: "delete"},
 	}
 	r := server.Router(routes, nil, "static", srvConfig.Config.CHESSMetaData.WebServer)
 	return r
