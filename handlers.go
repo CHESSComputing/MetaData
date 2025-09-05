@@ -155,7 +155,7 @@ func parseQueryRequest(c *gin.Context) (services.ServiceRequest, error) {
 func parseRequest(c *gin.Context) (services.MetaRecord, error) {
 	var rec services.MetaRecord
 	defer c.Request.Body.Close()
-	body, err := ioutil.ReadAll(c.Request.Body)
+	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		return rec, err
 	}
