@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -87,7 +88,7 @@ func RecordHandler(c *gin.Context) {
 func parseSpec(c *gin.Context) (map[string]any, error) {
 	var spec map[string]any
 	defer c.Request.Body.Close()
-	body, err := ioutil.ReadAll(c.Request.Body)
+	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		return spec, err
 	}
@@ -102,16 +103,24 @@ func parseSpec(c *gin.Context) (map[string]any, error) {
 func RecordsHandler(c *gin.Context) {
 	spec, err := parseSpec(c)
 	if err != nil {
-		log.Println("ERROR:", err)
-		rec := services.Response("MetaData", http.StatusInternalServerError, services.ParseError, err)
-		c.JSON(http.StatusInternalServerError, rec)
-		return
+		log.Println("WARNING: unable to parse spec from HTTP request, error:", err)
 	}
+	projection := c.Request.FormValue("projection")
 	var records []map[string]any
-	records = metaDB.Get(
-		srvConfig.Config.CHESSMetaData.DBName,
-		srvConfig.Config.CHESSMetaData.DBColl,
-		spec, 0, -1)
+	if projection != "" {
+		proj := make(map[string]int)
+		proj["_id"] = 0
+		proj[projection] = 1
+		records = metaDB.GetProjection(
+			srvConfig.Config.CHESSMetaData.DBName,
+			srvConfig.Config.CHESSMetaData.DBColl,
+			spec, proj, 0, -1)
+	} else {
+		records = metaDB.Get(
+			srvConfig.Config.CHESSMetaData.DBName,
+			srvConfig.Config.CHESSMetaData.DBColl,
+			spec, 0, -1)
+	}
 	if Verbose > 0 {
 		log.Println("RecordsHandler", spec, records)
 	}
@@ -345,8 +354,8 @@ func DeleteHandler(c *gin.Context) {
 	did := c.Request.FormValue("did")
 	_, user, err := server.GetAuthTokenUser(c)
 	if err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "no user found in token", "message": "no user found", "code": services.RemoveError})
-				return
+		c.JSON(http.StatusBadRequest, gin.H{"error": "no user found in token", "message": "no user found", "code": services.RemoveError})
+		return
 	}
 	// find user btrs and see if it matches the provided did
 	if srvConfig.Config.Frontend.CheckBtrs && srvConfig.Config.Embed.DocDb == "" {
