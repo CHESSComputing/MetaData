@@ -174,6 +174,11 @@ func insertData(sname string, rec map[string]any, attrs, sep, div string, update
 	if !ok || did == "" {
 		// create did out of provided attributes
 		did = utils.CreateDID(rec, attrs, sep, div)
+		if did == "" {
+			msg := fmt.Sprintf("fail to create did from attrs=%+v rec=%+v", attrs, rec)
+			log.Println("ERROR: ", msg)
+			return "", errors.New(msg)
+		}
 		rec["did"] = did
 	}
 	// for testing purposes with hey we will replace __PLACEHOLDER__ in DID
