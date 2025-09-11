@@ -9,6 +9,7 @@ import (
 	docdb "github.com/CHESSComputing/golib/docdb"
 	lexicon "github.com/CHESSComputing/golib/lexicon"
 	server "github.com/CHESSComputing/golib/server"
+	"github.com/CHESSComputing/golib/services"
 	utils "github.com/CHESSComputing/golib/utils"
 	"github.com/gin-gonic/gin"
 )
@@ -24,6 +25,7 @@ var Verbose int
 // global variables
 var _beamlines []string
 var _smgr SchemaManager
+var _foxdenUser services.UserAttributes
 
 // metaDB object
 var metaDB docdb.DocDB
@@ -88,6 +90,17 @@ func Server() {
 		// default list
 		_skipKeys = []string{"user", "date", "description", "schema_name", "schema_file", "schema", "did", "doi", "doi_url", "doi_user", "doi_created_at", "doi_public", "doi_provider", "doi_foxden_url", "doi_access_metadata", "doi_parents_dids", "globus_link", "history"}
 	}
+
+	// make a choice of foxden user
+	switch srvConfig.Config.CHESSMetaData.FoxdenUser.User {
+	case "Maglab":
+		_foxdenUser = &services.MaglabUser{}
+	case "CHESS":
+		_foxdenUser = &services.CHESSUser{}
+	default:
+		_foxdenUser = &services.CHESSUser{}
+	}
+	_foxdenUser.Init()
 
 	// setup web router and start the service
 	r := setupRouter()
