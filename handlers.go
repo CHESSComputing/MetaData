@@ -359,17 +359,18 @@ func DeleteHandler(c *gin.Context) {
 	}
 	// find user btrs and see if it matches the provided did
 	if srvConfig.Config.Frontend.CheckBtrs && srvConfig.Config.Embed.DocDb == "" {
-		attrs, err := services.UserAttributes(user)
+		fuser, err := _foxdenUser.Get(user)
+		btrs := fuser.Btrs
 		if err == nil {
 			// check user btrs and return error if user does not have any associations with Btrs
-			if len(attrs.Btrs) == 0 {
+			if len(btrs) == 0 {
 				msg := fmt.Sprintf("User %s does not associated with any BTRs, delete record is deined", user)
 				log.Println("ERROR:", msg)
 				c.JSON(http.StatusBadRequest, gin.H{"error": "no btr matches", "message": msg, "code": services.RemoveError})
 				return
 			}
 			btrFound := false
-			for _, btr := range attrs.Btrs {
+			for _, btr := range btrs {
 				if strings.Contains(did, btr) {
 					btrFound = true
 				}
