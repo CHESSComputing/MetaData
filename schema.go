@@ -265,8 +265,8 @@ func (s *Schema) Validate(rec map[string]any) error {
 	// hidden mandatory keys we add to each form
 	var mkeys []string
 	for k, v := range rec {
-		// skip user key
-		if utils.InList(k, _skipKeys) {
+		// skip user key if it does not belong to schema
+		if utils.InList(k, _skipKeys) && !utils.InList(k, keys) {
 			continue
 		}
 		// check if our record key belong to the schema keys
@@ -319,6 +319,9 @@ func (s *Schema) Validate(rec map[string]any) error {
 		}
 		msg := fmt.Sprintf("Schema %s, mandatory keys %v, record keys %v, missing keys %v", s.FileName, smkeys, mkeys, missing)
 		log.Printf("ERROR: %s", msg)
+		if Verbose > 0 {
+			log.Printf("provided record %+v", rec)
+		}
 		return errors.New(msg)
 	}
 	return nil
