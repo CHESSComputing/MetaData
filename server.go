@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	beamlines "github.com/CHESSComputing/golib/beamlines"
 	srvConfig "github.com/CHESSComputing/golib/config"
 	docdb "github.com/CHESSComputing/golib/docdb"
 	lexicon "github.com/CHESSComputing/golib/lexicon"
@@ -24,7 +25,7 @@ var Verbose int
 
 // global variables
 var _beamlines []string
-var _smgr SchemaManager
+var _smgr beamlines.SchemaManager
 var _foxdenUser services.UserAttributes
 
 // metaDB object
@@ -61,13 +62,14 @@ func Server() {
 	// init Verbose
 	Verbose = srvConfig.Config.CHESSMetaData.WebServer.Verbose
 	if srvConfig.Config.CHESSMetaData.SchemaRenewInterval == 0 {
-		SchemaRenewInterval = time.Duration(1 * 60 * 60 * time.Second) // by default renew every 1 hour
+		beamlines.SchemaRenewInterval = time.Duration(1 * 60 * 60 * time.Second) // by default renew every 1 hour
 	} else {
-		SchemaRenewInterval = time.Duration(srvConfig.Config.CHESSMetaData.SchemaRenewInterval) * time.Second
+		beamlines.SchemaRenewInterval = time.Duration(srvConfig.Config.CHESSMetaData.SchemaRenewInterval) * time.Second
 	}
 
 	// initialize schema manager
-	_smgr = SchemaManager{}
+	beamlines.Verbose = Verbose
+	_smgr = beamlines.SchemaManager{}
 	for _, fname := range srvConfig.Config.CHESSMetaData.SchemaFiles {
 		_, err := _smgr.Load(fname)
 		if err != nil {
@@ -85,10 +87,10 @@ func Server() {
 	}
 	lexicon.LexiconPatterns = lexPatterns
 
-	_skipKeys = srvConfig.Config.CHESSMetaData.SkipKeys
-	if len(_skipKeys) == 0 {
+	beamlines.SkipKeys = srvConfig.Config.CHESSMetaData.SkipKeys
+	if len(beamlines.SkipKeys) == 0 {
 		// default list
-		_skipKeys = []string{"user", "date", "description", "schema_name", "schema_file", "schema", "did", "doi", "doi_url", "doi_user", "doi_created_at", "doi_public", "doi_provider", "doi_foxden_url", "doi_access_metadata", "doi_parents_dids", "globus_link", "history"}
+		beamlines.SkipKeys = []string{"user", "date", "description", "schema_name", "schema_file", "schema", "did", "doi", "doi_url", "doi_user", "doi_created_at", "doi_public", "doi_provider", "doi_foxden_url", "doi_access_metadata", "doi_parents_dids", "globus_link", "history"}
 	}
 
 	// make a choice of foxden user

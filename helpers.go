@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	beamlines "github.com/CHESSComputing/golib/beamlines"
 	srvConfig "github.com/CHESSComputing/golib/config"
 	server "github.com/CHESSComputing/golib/server"
 	utils "github.com/CHESSComputing/golib/utils"
@@ -217,7 +218,7 @@ func genForm(c *gin.Context, fname string, record *map[string]any) (string, erro
 }
 
 // helper function to create form entry
-func formEntry(c *gin.Context, smap map[string]SchemaRecord, k, s, required string, record *map[string]any) string {
+func formEntry(c *gin.Context, smap map[string]beamlines.SchemaRecord, k, s, required string, record *map[string]any) string {
 	// check if provided record has value
 	var defaultValue string
 	if record != nil {
@@ -386,7 +387,7 @@ func processForm(r *http.Request) (string, map[string]any, error) {
 					return fname, rec, err
 				}
 			} else {
-				if !utils.InList(k, _skipKeys) {
+				if !utils.InList(k, beamlines.SkipKeys) {
 					log.Println("ERROR: no key", k, "found in schema map, error", err)
 					return fname, rec, err
 				}
@@ -449,10 +450,10 @@ func htmlInputs(rec map[string]any) []template.HTML {
 }
 
 // helper function to parser form values
-func parseValue(schema *Schema, key string, items []string) (any, error) {
+func parseValue(schema *beamlines.Schema, key string, items []string) (any, error) {
 	r, ok := schema.Map[key]
 	if !ok {
-		if srvConfig.Config.CHESSMetaData.TestMode && utils.InList[string](key, _skipKeys) {
+		if srvConfig.Config.CHESSMetaData.TestMode && utils.InList[string](key, beamlines.SkipKeys) {
 			return "", nil
 		}
 		msg := fmt.Sprintf("No key %s found in schema map", key)
