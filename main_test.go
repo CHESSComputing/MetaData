@@ -9,6 +9,7 @@ import (
 	"os"
 	"testing"
 
+	beamlines "github.com/CHESSComputing/golib/beamlines"
 	srvConfig "github.com/CHESSComputing/golib/config"
 	docdb "github.com/CHESSComputing/golib/docdb"
 	"github.com/CHESSComputing/golib/lexicon"
@@ -47,7 +48,7 @@ func initMetaData() {
 	Verbose = srvConfig.Config.CHESSMetaData.WebServer.Verbose
 
 	// initialize schema manager
-	_smgr = SchemaManager{}
+	_smgr = beamlines.SchemaManager{}
 	for _, fname := range srvConfig.Config.CHESSMetaData.SchemaFiles {
 		_, err := _smgr.Load(fname)
 		if err != nil {
