@@ -15,8 +15,8 @@ import (
 
 // HistoryRecord represents history part of metadata record
 type HistoryRecord struct {
-	User      string
-	Timestamp int64
+	User      string `json:"user"`
+	Timestamp int64  `json:"timestamp"`
 }
 
 // String provives string representation of history record
@@ -198,20 +198,33 @@ func insertData(sname string, rec map[string]any, attrs, sep, div string, update
 		}
 		// add history part of the record
 		if user, ok := rec["user"]; ok {
-			hrec := HistoryRecord{User: user.(string), Timestamp: time.Now().Unix()}
 			var hrecords []HistoryRecord
 			if val, ok := rec["history"]; ok {
-				var existingRecords []HistoryRecord
-				if err := json.Unmarshal([]byte(fmt.Sprintf("%v", val)), &existingRecords); err == nil {
-					// perform mapping from rec["history"] which is []any data-type to history records
-					// if successful we use existing records
-					hrecords = existingRecords
+				switch records := val.(type) {
+				case []any:
+					for _, r := range records {
+						switch hr := r.(type) {
+						case HistoryRecord:
+							hrecords = append(hrecords, hr)
+						case map[string]any:
+							var hrec HistoryRecord
+							if data, err := json.Marshal(hr); err == nil {
+								if err := json.Unmarshal(data, &hrec); err == nil {
+									hrecords = append(hrecords, hrec)
+								} else {
+									log.Println("ERROR: unable to unmarshal mongodb record", err)
+								}
+							} else {
+								log.Println("ERROR: unable to marshal mongodb record", err)
+							}
+						}
+					}
 				}
-				hrecords = append(hrecords, hrec)
-				rec["history"] = hrecords
-			} else {
-				rec["history"] = []HistoryRecord{hrec}
 			}
+			// add new history record
+			hrec := HistoryRecord{User: user.(string), Timestamp: time.Now().Unix()}
+			hrecords = append(hrecords, hrec)
+			rec["history"] = hrecords
 		} else {
 			msg := fmt.Sprintf("Metadata record does not contain user key")
 			return did, errors.New(msg)
