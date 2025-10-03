@@ -11,6 +11,7 @@ import (
 	srvConfig "github.com/CHESSComputing/golib/config"
 	"github.com/CHESSComputing/golib/globus"
 	utils "github.com/CHESSComputing/golib/utils"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // HistoryRecord represents history part of metadata record
@@ -196,39 +197,50 @@ func insertData(sname string, rec map[string]any, attrs, sep, div string, update
 			log.Printf("ERROR: unable to archive record for did=%s, error=%v", did, err)
 			return did, err
 		}
-		// add history part of the record
-		if user, ok := rec["user"]; ok {
-			var hrecords []HistoryRecord
-			if val, ok := rec["history"]; ok {
-				switch records := val.(type) {
-				case []any:
-					for _, r := range records {
-						switch hr := r.(type) {
-						case HistoryRecord:
-							hrecords = append(hrecords, hr)
-						case map[string]any:
-							var hrec HistoryRecord
-							if data, err := json.Marshal(hr); err == nil {
-								if err := json.Unmarshal(data, &hrec); err == nil {
-									hrecords = append(hrecords, hrec)
-								} else {
-									log.Println("ERROR: unable to unmarshal mongodb record", err)
-								}
-							} else {
-								log.Println("ERROR: unable to marshal mongodb record", err)
-							}
-						}
-					}
-				}
-			}
-			// add new history record
-			hrec := HistoryRecord{User: user.(string), Timestamp: time.Now().Unix()}
-			hrecords = append(hrecords, hrec)
-			rec["history"] = hrecords
+		var user string
+		if val, ok := rec["user"]; ok {
+			user = val.(string)
 		} else {
 			msg := fmt.Sprintf("Metadata record does not contain user key")
 			return did, errors.New(msg)
 		}
+
+		// get existing record and extract history records from it
+		var hrecords []HistoryRecord
+		spec := make(map[string]any)
+		spec["did"] = did
+		projection := make(map[string]int)
+		projection["history"] = 1
+		histRecords := metaDB.GetProjection(
+			srvConfig.Config.CHESSMetaData.MongoDB.DBName,
+			srvConfig.Config.CHESSMetaData.MongoDB.DBColl,
+			spec, projection, 0, 1)
+		for _, hrec := range histRecords {
+			if val, ok := hrec["history"]; ok {
+				if hr := getHistoryRecord(val); hr != nil {
+					hrecords = append(hrecords, *hr)
+				}
+			}
+		}
+
+		// look-up if provided records has history and update history records accordingly
+		if val, ok := rec["history"]; ok {
+			var addRecords []HistoryRecord
+			for _, hr := range getHistoryRecords(val) {
+				for _, hrec := range hrecords {
+					if hr != hrec {
+						addRecords = append(addRecords, hr)
+					}
+				}
+			}
+			hrecords = append(hrecords, addRecords...)
+		}
+
+		// add new history record
+		hrec := HistoryRecord{User: user, Timestamp: time.Now().Unix()}
+		hrecords = append(hrecords, hrec)
+		rec["history"] = hrecords
+
 		// add record to metaDB DB
 		var records []map[string]any
 		records = append(records, rec)
@@ -264,4 +276,49 @@ func insertData(sname string, rec map[string]any, attrs, sep, div string, update
 	log.Println("metaDB.InsertRecord", err)
 
 	return did, err
+}
+
+// helper function to get history records from given metadata history record part
+func getHistoryRecords(val any) []HistoryRecord {
+	var hrecords []HistoryRecord
+	switch records := val.(type) {
+	case []any:
+		for _, r := range records {
+			if hrec := getHistoryRecord(r); hrec != nil {
+				hrecords = append(hrecords, *hrec)
+			}
+		}
+	}
+	return hrecords
+}
+
+// helper function to deal with any history record structure
+func getHistoryRecord(val any) *HistoryRecord {
+	log.Printf("getHistoryRecord %+v type %T", val, val)
+	switch hr := val.(type) {
+	case HistoryRecord:
+		return &hr
+	case primitive.A:
+		for _, rec := range hr {
+			return decodeHistRecord(rec)
+		}
+	case map[string]any:
+		return decodeHistRecord(hr)
+	}
+	return nil
+}
+
+// helper function to decode history record
+func decodeHistRecord(hr any) *HistoryRecord {
+	var hrec HistoryRecord
+	if data, err := json.Marshal(hr); err == nil {
+		if err := json.Unmarshal(data, &hrec); err == nil {
+			return &hrec
+		} else {
+			log.Println("ERROR: unable to unmarshal mongodb record", err)
+		}
+	} else {
+		log.Println("ERROR: unable to marshal mongodb record", err)
+	}
+	return nil
 }
