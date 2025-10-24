@@ -90,6 +90,9 @@ func globusLink(rec map[string]any) (string, error) {
 		return "", errors.New(msg)
 	}
 	pat := "CHESS Raw"
+	if srvConfig.Config.Globus.CollectionPath != "" {
+		path = srvConfig.Config.Globus.CollectionPath
+	}
 	gurl, err := globus.ChessGlobusLink(pat, path)
 	return gurl, err
 }
