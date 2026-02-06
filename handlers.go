@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
@@ -133,10 +132,10 @@ func RecordsHandler(c *gin.Context) {
 }
 
 // helper function to parse incoming HTTP request into ServiceRequest structure
-func parseQueryRequest(c *gin.Context) (services.ServiceRequest, error) {
+func parseQueryRequest(c *gin.Context, verboseOutput bool) (services.ServiceRequest, error) {
 	var rec services.ServiceRequest
 	defer c.Request.Body.Close()
-	body, err := ioutil.ReadAll(c.Request.Body)
+	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		return rec, err
 	}
@@ -145,8 +144,9 @@ func parseQueryRequest(c *gin.Context) (services.ServiceRequest, error) {
 		log.Printf("ERROR: unable to unmarshal response body %s, error %v", string(body), err)
 		return rec, err
 	}
-	if Verbose > 0 {
-		log.Printf("QueryHandler received request %+s", rec.String())
+	if Verbose > 0 && verboseOutput {
+		_, user, _ := server.GetAuthTokenUser(c)
+		log.Printf("QueryHandler: user=%s query:%s", user, rec.String())
 	}
 	return rec, nil
 }
@@ -250,7 +250,11 @@ func UpdateDoiHandler(c *gin.Context) {
 // QueryCountHandler handles POST queries
 func QueryCountHandler(c *gin.Context) {
 
-	rec, err := parseQueryRequest(c)
+	verboseOutput := false
+	if Verbose > 1 {
+		verboseOutput = true
+	}
+	rec, err := parseQueryRequest(c, verboseOutput)
 	if err != nil {
 		log.Println("ERROR:", err)
 		rec := services.Response("MetaData", http.StatusInternalServerError, services.ParseError, err)
@@ -267,8 +271,8 @@ func QueryCountHandler(c *gin.Context) {
 	} else {
 		spec, err = ql.ParseQuery(query)
 	}
-	if Verbose > 0 {
-		log.Printf("search query='%s' spec=%+v", query, spec)
+	if Verbose > 2 {
+		log.Printf("QueryCountHandler: query='%s' spec=%+v", query, spec)
 	}
 	if err != nil {
 		log.Println("ERROR:", err)
@@ -281,8 +285,8 @@ func QueryCountHandler(c *gin.Context) {
 	if spec != nil {
 		nrecords = metaDB.Count(srvConfig.Config.CHESSMetaData.DBName, srvConfig.Config.CHESSMetaData.DBColl, spec)
 	}
-	if Verbose > 0 {
-		log.Printf("spec %v nrecords %d", spec, nrecords)
+	if Verbose > 1 {
+		log.Printf("QueryCountHandler: spec %v nrecords %d", spec, nrecords)
 	}
 	c.JSON(http.StatusOK, nrecords)
 }
@@ -290,7 +294,8 @@ func QueryCountHandler(c *gin.Context) {
 // QueryHandler handles POST queries
 func QueryHandler(c *gin.Context) {
 
-	rec, err := parseQueryRequest(c)
+	// use verbose output for query printout
+	rec, err := parseQueryRequest(c, true)
 	if err != nil {
 		log.Println("ERROR:", err)
 		rec := services.Response("MetaData", http.StatusInternalServerError, services.ParseError, err)
@@ -307,13 +312,13 @@ func QueryHandler(c *gin.Context) {
 
 	spec := rec.ServiceQuery.Spec
 	if spec != nil {
-		if Verbose > 0 {
+		if Verbose > 2 {
 			log.Printf("use rec.ServiceQuery.Spec=%+v", spec)
 		}
 	} else {
 		spec, err = ql.ParseQuery(query)
-		if Verbose > 0 {
-			log.Printf("search query='%s' spec=%+v", query, spec)
+		if Verbose > 2 {
+			log.Printf("QueryHandler: query='%s' spec=%+v", query, spec)
 		}
 		if err != nil {
 			log.Println("ERROR:", err)
@@ -340,7 +345,7 @@ func QueryHandler(c *gin.Context) {
 		}
 	}
 	if Verbose > 0 {
-		log.Printf("spec %v sortedKeys %v nrecords %d return idx=%d limit=%d", spec, sortKeys, nrecords, idx, limit)
+		log.Printf("QueryHandler: spec %v sortedKeys %v nrecords %d return idx=%d limit=%d", spec, sortKeys, nrecords, idx, limit)
 	}
 	//     r := services.Response("MetaData", http.StatusOK, services.OK, nil)
 	//     r.ServiceQuery = services.ServiceQuery{Query: query, Spec: spec, Idx: idx, Limit: limit}
