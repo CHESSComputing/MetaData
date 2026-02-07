@@ -1,11 +1,11 @@
 module github.com/CHESSComputing/MetaData
 
-go 1.25.6
+go 1.25.7
 
 require (
-	github.com/CHESSComputing/golib v1.0.3
+	github.com/CHESSComputing/golib v1.0.4
 	github.com/gin-gonic/gin v1.11.0
-	go.mongodb.org/mongo-driver v1.17.8
+	go.mongodb.org/mongo-driver v1.17.9
 	gopkg.in/yaml.v2 v2.4.0
 )
 
