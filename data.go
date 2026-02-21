@@ -11,7 +11,7 @@ import (
 	srvConfig "github.com/CHESSComputing/golib/config"
 	"github.com/CHESSComputing/golib/globus"
 	utils "github.com/CHESSComputing/golib/utils"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 // HistoryRecord represents history part of metadata record
@@ -301,7 +301,7 @@ func getHistoryRecord(val any) *HistoryRecord {
 	switch hr := val.(type) {
 	case HistoryRecord:
 		return &hr
-	case primitive.A:
+	case bson.A:
 		for _, rec := range hr {
 			return decodeHistRecord(rec)
 		}
