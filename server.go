@@ -87,12 +87,6 @@ func Server() {
 	}
 	lexicon.LexiconPatterns = lexPatterns
 
-	beamlines.SkipKeys = srvConfig.Config.CHESSMetaData.SkipKeys
-	if len(beamlines.SkipKeys) == 0 {
-		// default list
-		beamlines.SkipKeys = []string{"user", "date", "description", "schema_name", "schema_file", "schema", "did", "doi", "doi_url", "doi_user", "doi_created_at", "doi_public", "doi_provider", "doi_foxden_url", "doi_access_metadata", "doi_parents_dids", "globus_link", "history"}
-	}
-
 	// make a choice of foxden user
 	switch srvConfig.Config.CHESSMetaData.FoxdenUser.User {
 	case "Maglab":

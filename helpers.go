@@ -387,7 +387,7 @@ func processForm(r *http.Request) (string, map[string]any, error) {
 					return fname, rec, err
 				}
 			} else {
-				if !utils.InList(k, beamlines.SkipKeys) {
+				if !utils.InList(k, srvConfig.Config.CHESSMetaData.SkipKeys) {
 					log.Println("ERROR: no key", k, "found in schema map, error", err)
 					return fname, rec, err
 				}
@@ -453,7 +453,7 @@ func htmlInputs(rec map[string]any) []template.HTML {
 func parseValue(schema *beamlines.Schema, key string, items []string) (any, error) {
 	r, ok := schema.Map[key]
 	if !ok {
-		if srvConfig.Config.CHESSMetaData.TestMode && utils.InList[string](key, beamlines.SkipKeys) {
+		if srvConfig.Config.CHESSMetaData.TestMode && utils.InList[string](key, srvConfig.Config.CHESSMetaData.SkipKeys) {
 			return "", nil
 		}
 		msg := fmt.Sprintf("No key %s found in schema map", key)
