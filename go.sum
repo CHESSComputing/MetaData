@@ -2,8 +2,8 @@ cloud.google.com/go/compute/metadata v0.9.0 h1:pDUj4QMoPejqq20dK0Pg2N4yG9zIkYGdB
 cloud.google.com/go/compute/metadata v0.9.0/go.mod h1:E0bWwX5wTnLPedCKqk3pJmVgCBSM6qQI1yTBdEb3C10=
 github.com/Azure/go-ntlmssp v0.1.0 h1:DjFo6YtWzNqNvQdrwEyr/e4nhU3vRiwenz5QX7sFz+A=
 github.com/Azure/go-ntlmssp v0.1.0/go.mod h1:NYqdhxd/8aAct/s4qSYZEerdPuH1liG2/X9DiVTbhpk=
-github.com/CHESSComputing/golib v1.0.9 h1:KqDuQ3IILhV23MEx4XmAPShKfVDxJ/1reBjSpF+qWe4=
-github.com/CHESSComputing/golib v1.0.9/go.mod h1:4AZLApRaBIPLUkFTOkrMq6hWGulCtG9D5gZG3+oYxEE=
+github.com/CHESSComputing/golib v1.1.1 h1:9C16FkjeyFpvmx5AUKrO3sjLq1QZJdYjtOzvEgoSD88=
+github.com/CHESSComputing/golib v1.1.1/go.mod h1:4AZLApRaBIPLUkFTOkrMq6hWGulCtG9D5gZG3+oYxEE=
 github.com/alexbrainman/sspi v0.0.0-20250919150558-7d374ff0d59e h1:4dAU9FXIyQktpoUAgOJK3OTFc/xug0PCXYCqU0FgDKI=
 github.com/alexbrainman/sspi v0.0.0-20250919150558-7d374ff0d59e/go.mod h1:cEWa1LVoE5KvSD9ONXsZrj0z6KqySlCCNKHlLzbqAt4=
 github.com/bytedance/gopkg v0.1.3 h1:TPBSwH8RsouGCBcMBktLt1AymVo2TVsBVCY4b6TnZ/M=
