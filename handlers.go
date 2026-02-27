@@ -271,6 +271,8 @@ func QueryCountHandler(c *gin.Context) {
 	} else {
 		spec, err = ql.ParseQuery(query)
 	}
+	// adjust spec date if encessary
+	adjustTimestamp(&spec)
 	if Verbose > 2 {
 		log.Printf("QueryCountHandler: query='%s' spec=%+v", query, spec)
 	}
@@ -327,6 +329,9 @@ func QueryHandler(c *gin.Context) {
 			return
 		}
 	}
+
+	// adjust spec date if encessary
+	adjustTimestamp(&spec)
 
 	var records []map[string]any
 	nrecords := 0

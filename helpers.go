@@ -552,3 +552,20 @@ func handleNDJSON(c *gin.Context, records []map[string]any) {
 		_, _ = c.Writer.Write(append(line, '\n'))
 	}
 }
+
+// helper function to adjust timestamp in spec
+func adjustTimestamp(specPtr *map[string]any) {
+	spec := *specPtr
+	if val, ok := spec["date"]; ok {
+		switch ts := val.(type) {
+		case string:
+			epoch, err := utils.RFC3339ToEpoch(ts)
+			if err == nil {
+				spec["date"] = epoch
+			}
+		}
+	}
+	if Verbose > 2 {
+		log.Printf("adjusted spec: %+v", spec)
+	}
+}
