@@ -89,11 +89,11 @@ func parseSpec(c *gin.Context) (map[string]any, error) {
 	defer c.Request.Body.Close()
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
-		return spec, err
+		return spec, fmt.Errorf("[MetaData.main.parseSpec] io.ReadAll error: %w", err)
 	}
 	err = json.Unmarshal(body, &spec)
 	if err != nil {
-		return spec, err
+		return spec, fmt.Errorf("[MetaData.main.parseSpec] json.Unmarshal error: %w", err)
 	}
 	return spec, nil
 }
@@ -137,7 +137,7 @@ func parseQueryRequest(c *gin.Context, verboseOutput bool) (services.ServiceRequ
 	defer c.Request.Body.Close()
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
-		return rec, err
+		return rec, fmt.Errorf("[MetaData.main.parseQueryRequest] io.ReadAll error: %w", err)
 	}
 	err = json.Unmarshal(body, &rec)
 	if err != nil {
@@ -157,11 +157,11 @@ func parseRequest(c *gin.Context) (services.MetaRecord, error) {
 	defer c.Request.Body.Close()
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
-		return rec, err
+		return rec, fmt.Errorf("[MetaData.main.parseRequest] io.ReadAll error: %w", err)
 	}
 	err = json.Unmarshal(body, &rec)
 	if err != nil {
-		return rec, err
+		return rec, fmt.Errorf("[MetaData.main.parseRequest] json.Unmarshal error: %w", err)
 	}
 	if Verbose > 0 {
 		log.Printf("QueryHandler received request %+v", rec)

@@ -35,7 +35,7 @@ func username(r *http.Request) (string, error) {
 	}
 	cookie, err := r.Cookie("auth-session")
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("[MetaData.main.username] r.Cookie error: %w", err)
 	}
 
 	//     byteArray := decrypt([]byte(cookie.Value), Config.StoreSecret)

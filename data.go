@@ -36,7 +36,7 @@ func validateData(sname string, rec map[string]any) error {
 		schema := smgr.Schema
 		err := schema.Validate(rec)
 		if err != nil {
-			return err
+			return fmt.Errorf("[MetaData.main.validateData] schema.Validate error: %w", err)
 		}
 	} else {
 		msg := fmt.Sprintf("No schema '%s' found for your record", sname)
@@ -148,7 +148,7 @@ func insertData(sname string, rec map[string]any, attrs, sep, div string, update
 
 	// check if data satisfies to one of the schema
 	if err := validateData(sname, rec); err != nil {
-		return "", err
+		return "", fmt.Errorf("[MetaData.main.insertData] validateData error: %w", err)
 	}
 	if _, ok := rec["date"]; !ok {
 		rec["date"] = time.Now().Unix()
