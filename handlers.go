@@ -142,7 +142,7 @@ func parseQueryRequest(c *gin.Context, verboseOutput bool) (services.ServiceRequ
 	err = json.Unmarshal(body, &rec)
 	if err != nil {
 		log.Printf("ERROR: unable to unmarshal response body %s, error %v", string(body), err)
-		return rec, err
+		return rec, fmt.Errorf("[MetaData.main.parseQueryRequest] json.Unmarshal error: %w", err)
 	}
 	if Verbose > 0 && verboseOutput {
 		_, user, _ := server.GetAuthTokenUser(c)

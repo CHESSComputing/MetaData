@@ -86,7 +86,7 @@ func globusLink(rec map[string]any) (string, error) {
 		}
 	}
 	if path == "" {
-		msg := fmt.Sprintf("no data location attributes %v found in meta-data record", locAttrs)
+		msg := fmt.Sprintf("[MetaData.main.globusLink] no data location attributes %v found in meta-data record", locAttrs)
 		return "", errors.New(msg)
 	}
 	pat := "CHESS Raw"
@@ -94,7 +94,7 @@ func globusLink(rec map[string]any) (string, error) {
 		path = srvConfig.Config.Globus.CollectionPath
 	}
 	gurl, err := globus.ChessGlobusLink(pat, path)
-	return gurl, err
+	return gurl, fmt.Errorf("[MetaData.main.globusLink] globus.ChessGlobusLink error: %w", err)
 }
 
 // helper function to update DOI part of metadata record
@@ -108,7 +108,10 @@ func updateDoiData(did, doi string, public bool) error {
 		srvConfig.Config.CHESSMetaData.MongoDB.DBName,
 		srvConfig.Config.CHESSMetaData.MongoDB.DBColl,
 		spec, record)
-	return err
+	if err != nil {
+		return fmt.Errorf("[MetaData.main.updateDoiData] metaDB.Update error: %w", err)
+	}
+	return nil
 
 }
 
@@ -134,7 +137,10 @@ func archiveRecord(rec map[string]any) error {
 		return errors.New(msg)
 	}
 	err := metaDB.InsertRecord(srvConfig.Config.CHESSMetaData.MongoDB.DBName, "archive", records[0])
-	return err
+	if err != nil {
+		return fmt.Errorf("[MetaData.main.archiveRecord] metaDB.InsertRecord error: %w", err)
+	}
+	return nil
 }
 
 // helper function to insert data into backend DB
@@ -198,7 +204,7 @@ func insertData(sname string, rec map[string]any, attrs, sep, div string, update
 		err = archiveRecord(rec)
 		if err != nil {
 			log.Printf("ERROR: unable to archive record for did=%s, error=%v", did, err)
-			return did, err
+			return did, fmt.Errorf("[MetaData.main.insertData] archiveRecord error: %w", err)
 		}
 		var user string
 		if val, ok := rec["user"]; ok {
@@ -253,8 +259,9 @@ func insertData(sname string, rec map[string]any, attrs, sep, div string, update
 			"did", records)
 		if err != nil {
 			log.Printf("ERROR: unable to metaDB.Upsert for did=%s, error=%v", did, err)
+			return did, fmt.Errorf("[MetaData.main.insertData] metaDB.Upsert error: %w", err)
 		}
-		return did, err
+		return did, nil
 	}
 
 	// check if did already exist in metaDB
@@ -278,7 +285,10 @@ func insertData(sname string, rec map[string]any, attrs, sep, div string, update
 		rec)
 	log.Println("metaDB.InsertRecord", err)
 
-	return did, err
+	if err != nil {
+		return did, fmt.Errorf("[MetaData.main.insertData] metaDB.InsertRecord error: %w", err)
+	}
+	return did, nil
 }
 
 // helper function to get history records from given metadata history record part

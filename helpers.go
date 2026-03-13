@@ -115,22 +115,22 @@ func genForm(c *gin.Context, fname string, record *map[string]any) (string, erro
 	schema, err := _smgr.Load(fname)
 	if err != nil {
 		log.Println("unable to load", fname, "error", err)
-		return strings.Join(out, ""), err
+		return strings.Join(out, ""), fmt.Errorf("[MetaData.main.genForm] _smgr.Load error: %w", err)
 	}
 	optKeys, err := schema.OptionalKeys()
 	if err != nil {
 		log.Println("unable to get optional keys, error", err)
-		return strings.Join(out, ""), err
+		return strings.Join(out, ""), fmt.Errorf("[MetaData.main.genForm] schema.OptionalKeys error: %w", err)
 	}
 	allKeys, err := schema.Keys()
 	if err != nil {
 		log.Println("unable to get keys, error", err)
-		return strings.Join(out, ""), err
+		return strings.Join(out, ""), fmt.Errorf("[MetaData.main.genForm] schema.Keys error: %w", err)
 	}
 	sectionKeys, err := schema.SectionKeys()
 	if err != nil {
 		log.Println("unable to get section keys, error", err)
-		return strings.Join(out, ""), err
+		return strings.Join(out, ""), fmt.Errorf("[MetaData.main.genForm] schema.SectionKeys error: %w", err)
 	}
 
 	// loop over all defined sections
@@ -138,7 +138,7 @@ func genForm(c *gin.Context, fname string, record *map[string]any) (string, erro
 	sections, err := schema.Sections()
 	if err != nil {
 		log.Println("unable to get sections, error", err)
-		return strings.Join(out, ""), err
+		return strings.Join(out, ""), fmt.Errorf("[MetaData.main.genForm] schema.Sections error: %w", err)
 	}
 	for _, s := range sections {
 		if skeys, ok := sectionKeys[s]; ok {
@@ -356,7 +356,7 @@ func processForm(r *http.Request) (string, map[string]any, error) {
 	schema, err := _smgr.Load(fname)
 	if err != nil {
 		log.Println("ERROR", err)
-		return fname, rec, err
+		return fname, rec, fmt.Errorf("[MetaData.main.processForm] _smgr.Load error: %w", err)
 	}
 	desc := ""
 	// r.PostForm provides url.Values which is map[string][]string type
@@ -384,12 +384,12 @@ func processForm(r *http.Request) (string, map[string]any, error) {
 					log.Println("WARNING: unable to parse optional key", k)
 				} else {
 					log.Println("ERROR: unable to parse mandatory key", k, "error", err)
-					return fname, rec, err
+					return fname, rec, fmt.Errorf("[MetaData.main.processForm] unable to parse mandatory key %s error: %w", k, err)
 				}
 			} else {
 				if !utils.InList(k, srvConfig.Config.CHESSMetaData.SkipKeys) {
 					log.Println("ERROR: no key", k, "found in schema map, error", err)
-					return fname, rec, err
+					return fname, rec, fmt.Errorf("[MetaData.main.processForm] utils.InList no key=%s error: %w", k, err)
 				}
 			}
 		}
@@ -517,7 +517,7 @@ func parseValue(schema *beamlines.Schema, key string, items []string) (any, erro
 			}
 			return v, nil
 		}
-		return 0, err
+		return 0, fmt.Errorf("[MetaData.main.parseValue] strconv.ParseInt error: %w", err)
 	} else if strings.HasPrefix(r.Type, "float") {
 		v, err := strconv.ParseFloat(items[0], 64)
 		if err == nil {
@@ -526,7 +526,7 @@ func parseValue(schema *beamlines.Schema, key string, items []string) (any, erro
 			}
 			return v, nil
 		}
-		return 0.0, err
+		return 0.0, fmt.Errorf("[MetaData.main.processForm] strconv.ParseFloat error: %w", err)
 	}
 	msg := fmt.Sprintf("Unable to parse form value for key %s", key)
 	log.Printf("ERROR: %s", msg)
