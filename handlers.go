@@ -106,8 +106,8 @@ func RecordsHandler(c *gin.Context) {
 	}
 	projection := c.Request.FormValue("projection")
 	var records []map[string]any
+	proj := make(map[string]int)
 	if projection != "" {
-		proj := make(map[string]int)
 		proj["_id"] = 0
 		proj[projection] = 1
 		records = metaDB.GetProjection(
@@ -121,7 +121,7 @@ func RecordsHandler(c *gin.Context) {
 			spec, 0, -1)
 	}
 	if Verbose > 0 {
-		log.Println("RecordsHandler", spec, records)
+		log.Printf("RecordsHandler: spec=%+v projection=%v records=%v", spec, proj, records)
 	}
 	accept := c.GetHeader("Accept")
 	if accept == "application/x-ndjson" || accept == "application/ndjson" {
