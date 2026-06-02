@@ -98,6 +98,39 @@ func parseSpec(c *gin.Context) (map[string]any, error) {
 	return spec, nil
 }
 
+// TmpRecordsHandler handles requests to get set of records for provided meta parametes
+func TmpRecordsHandler(c *gin.Context) {
+	spec, err := parseSpec(c)
+	if err != nil {
+		log.Println("WARNING: unable to parse spec from HTTP request, error:", err)
+	}
+	projection := c.Request.FormValue("projection")
+	var records []map[string]any
+	proj := make(map[string]int)
+	if projection != "" {
+		proj["_id"] = 0
+		proj[projection] = 1
+		records = metaDB.GetProjection(
+			srvConfig.Config.CHESSMetaData.DBName,
+			"tmp", // collection name of temporary record
+			spec, proj, 0, -1)
+	} else {
+		records = metaDB.Get(
+			srvConfig.Config.CHESSMetaData.DBName,
+			"tmp", // collection name of temporary record
+			spec, 0, -1)
+	}
+	if Verbose > 0 {
+		log.Printf("RecordsHandler: spec=%+v projection=%v records=%v", spec, proj, records)
+	}
+	accept := c.GetHeader("Accept")
+	if accept == "application/x-ndjson" || accept == "application/ndjson" {
+		handleNDJSON(c, records)
+		return
+	}
+	c.JSON(http.StatusOK, records)
+}
+
 // RecordsHandler handles requests to get set of records for provided meta parametes
 func RecordsHandler(c *gin.Context) {
 	spec, err := parseSpec(c)
@@ -221,6 +254,23 @@ func DataHandler(c *gin.Context) {
 	records = append(records, r)
 	resp.Results = services.ServiceResults{NRecords: 1, Records: records}
 	c.JSON(http.StatusOK, resp)
+}
+
+// UpdateTmpRecordHandler handles POST upload of meta-data record
+func UpdateTmpRecordHandler(c *gin.Context) {
+	// Bind JSON payload to struct
+	var rec map[string]any
+	if err := c.ShouldBindJSON(&rec); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	err := updateTmpRecord(rec)
+	if err != nil {
+		log.Println("ERROR:", err)
+		rec := services.Response("MetaData", http.StatusInternalServerError, services.ParseError, err)
+		c.JSON(http.StatusInternalServerError, rec)
+		return
+	}
 }
 
 // UpdateParams represents JSON struct used by UpdateHandler

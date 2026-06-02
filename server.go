@@ -37,6 +37,8 @@ func setupRouter() *gin.Engine {
 		{Method: "GET", Path: "/meta", Handler: MetaDetailsHandler, Authorized: false},
 		{Method: "GET", Path: "/record", Handler: RecordHandler, Authorized: false},
 		{Method: "GET", Path: "/records", Handler: RecordsHandler, Authorized: true},
+		{Method: "GET", Path: "/tmp/records", Handler: TmpRecordsHandler, Authorized: true},
+		{Method: "PUT", Path: "/tmp/record", Handler: UpdateTmpRecordHandler, Authorized: true, Scope: "write"},
 		{Method: "PUT", Path: "/updatedoi", Handler: UpdateDoiHandler, Authorized: true, Scope: "write"},
 		{Method: "PUT", Path: "/", Handler: DataHandler, Authorized: true, Scope: "write"},
 		{Method: "POST", Path: "/", Handler: DataHandler, Authorized: true, Scope: "write"},
