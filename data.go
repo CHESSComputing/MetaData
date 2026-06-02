@@ -335,3 +335,34 @@ func decodeHistRecord(hr any) *HistoryRecord {
 	}
 	return nil
 }
+
+func updateTmpRecord(rec map[string]any) error {
+	coll := "tmp" // collection name of temp records
+	spec := make(map[string]any)
+	if val, ok := rec["btr"]; ok {
+		spec["btr"] = val
+	} else {
+		return errors.New("provided tmp records does not contain btr key")
+	}
+	if val, ok := rec["sample_name"]; ok {
+		spec["sample_name"] = val
+	} else {
+		return errors.New("provided tmp records does not contain sample_name key")
+	}
+	// first find if such record exists
+	nrec := metaDB.Count(
+		srvConfig.Config.CHESSMetaData.MongoDB.DBName, coll, spec)
+	var err error
+	if nrec > 0 {
+		// if record exists we will update it
+		var records []map[string]any
+		records = append(records, rec)
+		err = metaDB.Upsert(
+			srvConfig.Config.CHESSMetaData.MongoDB.DBName, coll, "btr", records)
+	} else {
+		// if record does not exist we will insert it
+		err = metaDB.InsertRecord(
+			srvConfig.Config.CHESSMetaData.MongoDB.DBName, coll, rec)
+	}
+	return err
+}
