@@ -339,18 +339,26 @@ func decodeHistRecord(hr any) *HistoryRecord {
 
 // helper function to validate template record
 func validateTmplRecord(rec map[string]any) error {
-	if val, ok := rec["SchemaName"]; ok {
-		sname := fmt.Sprintf("%s", val)
-		schemaFile := beamlines.SchemaFileName(sname)
-		// to validate record we no longer need SchemaName key as it is not part of the record schema
-		delete(rec, "SchemaName")
-		err := validateData(schemaFile, rec)
-		if strings.Contains(strings.ToLower(err.Error()), "mandatory") {
-			// since it is template record we don't need all mandatory keys and will skip this error
-			return nil
-		}
+	val, ok := rec["SchemaName"]
+	if !ok {
+		return errors.New("provided template record does not have SchemaName key")
 	}
-	return errors.New("provided template record does not have SchemaName key")
+	// make local copy of the record without SchemaName for validation purposes
+	copyRecord := make(map[string]any)
+	for k, v := range rec {
+		if k == "SchemaName" {
+			continue
+		}
+		copyRecord[k] = v
+	}
+	sname := fmt.Sprintf("%s", val)
+	schemaFile := beamlines.SchemaFileName(sname)
+	err := validateData(schemaFile, copyRecord)
+	if err != nil && strings.Contains(strings.ToLower(err.Error()), "mandatory") {
+		// since it is template record we don't need all mandatory keys and will skip this error
+		return nil
+	}
+	return err
 }
 
 // helper function to update template record
