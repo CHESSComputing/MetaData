@@ -355,7 +355,7 @@ func validateTmplRecord(rec map[string]any) error {
 
 // helper function to update template record
 func updateTmplRecord(rec map[string]any) error {
-	coll := "tmpl" // collection name for template records
+	collName := srvConfig.Config.CHESSMetaData.DBColl + "_tmpl"
 	spec := make(map[string]any)
 	if val, ok := rec["btr"]; ok {
 		spec["btr"] = val
@@ -369,18 +369,18 @@ func updateTmplRecord(rec map[string]any) error {
 	}
 	// first find if such record exists
 	nrec := metaDB.Count(
-		srvConfig.Config.CHESSMetaData.MongoDB.DBName, coll, spec)
+		srvConfig.Config.CHESSMetaData.MongoDB.DBName, collName, spec)
 	var err error
 	if nrec > 0 {
 		// if record exists we will update it
 		var records []map[string]any
 		records = append(records, rec)
 		err = metaDB.Upsert(
-			srvConfig.Config.CHESSMetaData.MongoDB.DBName, coll, "btr", records)
+			srvConfig.Config.CHESSMetaData.MongoDB.DBName, collName, "btr", records)
 	} else {
 		// if record does not exist we will insert it
 		err = metaDB.InsertRecord(
-			srvConfig.Config.CHESSMetaData.MongoDB.DBName, coll, rec)
+			srvConfig.Config.CHESSMetaData.MongoDB.DBName, collName, rec)
 	}
 	return err
 }

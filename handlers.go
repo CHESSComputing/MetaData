@@ -100,7 +100,7 @@ func parseSpec(c *gin.Context) (map[string]any, error) {
 
 // TmplRecordsHandler handles requests to get tempalte records for provided meta parametes
 func TmplRecordsHandler(c *gin.Context) {
-	collName := "tmpl" // collection name for tempalte records
+	collName := srvConfig.Config.CHESSMetaData.DBColl + "_tmpl"
 	spec, err := parseSpec(c)
 	if err != nil {
 		log.Println("WARNING: unable to parse spec from HTTP request, error:", err)
