@@ -98,8 +98,9 @@ func parseSpec(c *gin.Context) (map[string]any, error) {
 	return spec, nil
 }
 
-// TmpRecordsHandler handles requests to get set of records for provided meta parametes
-func TmpRecordsHandler(c *gin.Context) {
+// TmplRecordsHandler handles requests to get tempalte records for provided meta parametes
+func TmplRecordsHandler(c *gin.Context) {
+	collName := "tmpl" // collection name for tempalte records
 	spec, err := parseSpec(c)
 	if err != nil {
 		log.Println("WARNING: unable to parse spec from HTTP request, error:", err)
@@ -110,15 +111,9 @@ func TmpRecordsHandler(c *gin.Context) {
 	if projection != "" {
 		proj["_id"] = 0
 		proj[projection] = 1
-		records = metaDB.GetProjection(
-			srvConfig.Config.CHESSMetaData.DBName,
-			"tmp", // collection name of temporary record
-			spec, proj, 0, -1)
+		records = metaDB.GetProjection(srvConfig.Config.CHESSMetaData.DBName, collName, spec, proj, 0, -1)
 	} else {
-		records = metaDB.Get(
-			srvConfig.Config.CHESSMetaData.DBName,
-			"tmp", // collection name of temporary record
-			spec, 0, -1)
+		records = metaDB.Get(srvConfig.Config.CHESSMetaData.DBName, collName, spec, 0, -1)
 	}
 	if Verbose > 0 {
 		log.Printf("RecordsHandler: spec=%+v projection=%v records=%v", spec, proj, records)
@@ -256,18 +251,25 @@ func DataHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-// UpdateTmpRecordHandler handles POST upload of meta-data record
-func UpdateTmpRecordHandler(c *gin.Context) {
+// UpdateTmplRecordHandler handles POST upload of meta-data record
+func UpdateTmplRecordHandler(c *gin.Context) {
 	// Bind JSON payload to struct
 	var rec map[string]any
 	if err := c.ShouldBindJSON(&rec); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	err := updateTmpRecord(rec)
+	err := validateTmplRecord(rec)
+	if err != nil {
+		log.Printf("ERROR: %v, record:\n%+v", err, rec)
+		rec := services.Response("MetaData", http.StatusInternalServerError, services.ValidateError, err)
+		c.JSON(http.StatusInternalServerError, rec)
+		return
+	}
+	err = updateTmplRecord(rec)
 	if err != nil {
 		log.Println("ERROR:", err)
-		rec := services.Response("MetaData", http.StatusInternalServerError, services.ParseError, err)
+		rec := services.Response("MetaData", http.StatusInternalServerError, services.UpdateError, err)
 		c.JSON(http.StatusInternalServerError, rec)
 		return
 	}

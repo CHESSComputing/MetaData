@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	beamlines "github.com/CHESSComputing/golib/beamlines"
 	srvConfig "github.com/CHESSComputing/golib/config"
 	"github.com/CHESSComputing/golib/globus"
 	utils "github.com/CHESSComputing/golib/utils"
@@ -336,8 +337,25 @@ func decodeHistRecord(hr any) *HistoryRecord {
 	return nil
 }
 
-func updateTmpRecord(rec map[string]any) error {
-	coll := "tmp" // collection name of temp records
+// helper function to validate template record
+func validateTmplRecord(rec map[string]any) error {
+	if val, ok := rec["SchemaName"]; ok {
+		sname := fmt.Sprintf("%s", val)
+		schemaFile := beamlines.SchemaFileName(sname)
+		// to validate record we no longer need SchemaName key as it is not part of the record schema
+		delete(rec, "SchemaName")
+		err := validateData(schemaFile, rec)
+		if strings.Contains(strings.ToLower(err.Error()), "mandatory") {
+			// since it is template record we don't need all mandatory keys and will skip this error
+			return nil
+		}
+	}
+	return errors.New("provided template record does not have SchemaName key")
+}
+
+// helper function to update template record
+func updateTmplRecord(rec map[string]any) error {
+	coll := "tmpl" // collection name for template records
 	spec := make(map[string]any)
 	if val, ok := rec["btr"]; ok {
 		spec["btr"] = val
@@ -347,7 +365,7 @@ func updateTmpRecord(rec map[string]any) error {
 	if val, ok := rec["sample_name"]; ok {
 		spec["sample_name"] = val
 	} else {
-		return errors.New("provided tmp records does not contain sample_name key")
+		return errors.New("provided template record does not contain sample_name key")
 	}
 	// first find if such record exists
 	nrec := metaDB.Count(
