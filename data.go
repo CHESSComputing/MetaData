@@ -349,6 +349,9 @@ func validateTmplRecord(rec map[string]any) error {
 		if k == "SchemaName" {
 			continue
 		}
+		if k == "timestamp" {
+			continue
+		}
 		copyRecord[k] = v
 	}
 	sname := fmt.Sprintf("%s", val)
@@ -361,8 +364,8 @@ func validateTmplRecord(rec map[string]any) error {
 	return err
 }
 
-// helper function to update template record
-func updateTmplRecord(rec map[string]any) error {
+// TmplRecord handles template records actions
+func TmplRecord(rec map[string]any, action string) error {
 	collName := srvConfig.Config.CHESSMetaData.DBColl + "_tmpl"
 	spec := make(map[string]any)
 	if val, ok := rec["btr"]; ok {
@@ -375,10 +378,17 @@ func updateTmplRecord(rec map[string]any) error {
 	} else {
 		return errors.New("provided template record does not contain sample_name key")
 	}
+	// add timestamp to the record
+	rec["timestamp"] = time.Now().Unix()
 	// first find if such record exists
 	nrec := metaDB.Count(
 		srvConfig.Config.CHESSMetaData.MongoDB.DBName, collName, spec)
 	var err error
+	if action == "create" {
+		err = metaDB.InsertRecord(
+			srvConfig.Config.CHESSMetaData.MongoDB.DBName, collName, rec)
+		return err
+	}
 	if nrec > 0 {
 		// if record exists we will update it
 		var records []map[string]any

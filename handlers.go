@@ -101,22 +101,13 @@ func parseSpec(c *gin.Context) (map[string]any, error) {
 // TmplRecordsHandler handles requests to get tempalte records for provided meta parametes
 func TmplRecordsHandler(c *gin.Context) {
 	collName := srvConfig.Config.CHESSMetaData.DBColl + "_tmpl"
-	spec, err := parseSpec(c)
-	if err != nil {
-		log.Println("WARNING: unable to parse spec from HTTP request, error:", err)
-	}
-	projection := c.Request.FormValue("projection")
+	spec := make(map[string]any)
 	var records []map[string]any
-	proj := make(map[string]int)
-	if projection != "" {
-		proj["_id"] = 0
-		proj[projection] = 1
-		records = metaDB.GetProjection(srvConfig.Config.CHESSMetaData.DBName, collName, spec, proj, 0, -1)
-	} else {
-		records = metaDB.Get(srvConfig.Config.CHESSMetaData.DBName, collName, spec, 0, -1)
-	}
-	if Verbose > 0 {
-		log.Printf("RecordsHandler: spec=%+v projection=%v records=%v", spec, proj, records)
+	skeys := []string{"timestamp"}
+	sortOrder := -1 // descending order
+	records = metaDB.GetSorted(srvConfig.Config.CHESSMetaData.DBName, collName, spec, skeys, sortOrder, 0, -1)
+	if Verbose > 1 {
+		log.Printf("RecordsHandler: spec=%+v records=%v", spec, records)
 	}
 	accept := c.GetHeader("Accept")
 	if accept == "application/x-ndjson" || accept == "application/ndjson" {
@@ -251,8 +242,18 @@ func DataHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-// UpdateTmplRecordHandler handles POST upload of meta-data record
+// CreateTmplRecordHandler handles POST upload of meta-data record
+func CreateTmplRecordHandler(c *gin.Context) {
+	TmplRecordHandler(c, "create")
+}
+
+// UpdateTmplRecordHandler handles PUT upload of meta-data record
 func UpdateTmplRecordHandler(c *gin.Context) {
+	TmplRecordHandler(c, "update")
+}
+
+// TmplRecordHandler handles POST upload of meta-data record
+func TmplRecordHandler(c *gin.Context, action string) {
 	// Bind JSON payload to struct
 	var rec map[string]any
 	if err := c.ShouldBindJSON(&rec); err != nil {
@@ -266,7 +267,11 @@ func UpdateTmplRecordHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, rec)
 		return
 	}
-	err = updateTmplRecord(rec)
+	if action == "update" {
+		err = TmplRecord(rec, "update")
+	} else if action == "create" {
+		err = TmplRecord(rec, "create")
+	}
 	if err != nil {
 		log.Println("ERROR:", err)
 		rec := services.Response("MetaData", http.StatusInternalServerError, services.UpdateError, err)
