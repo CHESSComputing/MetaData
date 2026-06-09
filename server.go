@@ -42,6 +42,7 @@ func setupRouter() *gin.Engine {
 		{Method: "PUT", Path: "/", Handler: DataHandler, Authorized: true, Scope: "write"},
 		{Method: "POST", Path: "/tmpl/record", Handler: CreateTmplRecordHandler, Authorized: true, Scope: "write"},
 		{Method: "PUT", Path: "/tmpl/record", Handler: UpdateTmplRecordHandler, Authorized: true, Scope: "write"},
+		{Method: "POST", Path: "/tmpl/submit/record", Handler: SubmitTmplRecordHandler, Authorized: true, Scope: "write"},
 		{Method: "POST", Path: "/", Handler: DataHandler, Authorized: true, Scope: "write"},
 		{Method: "POST", Path: "/search", Handler: QueryHandler, Authorized: true},
 		{Method: "POST", Path: "/summary", Handler: SummaryHandler, Authorized: false},

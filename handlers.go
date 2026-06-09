@@ -242,6 +242,18 @@ func DataHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
+// SubmitTmplRecordHandler handles submition of tmpl records to FOXDEN
+func SubmitTmplRecordHandler(c *gin.Context) {
+	// provided record should pass through these steps:
+	// 1. we take record and extract from it its Schema
+	// 2. using schema name we identify which schema file to use
+	// 3. we initialize beamlines.Scheam{SchemaFileName: schemafilename} object
+	// 4. we perform partial (tmpl) record validation via s.ValidateTmplRecord(rec)
+	// 5. we extract from spec the rest of the record (filled by spec)
+	// 6. we merge records parts together
+	// 7. we inject record into FOXDEN
+}
+
 // CreateTmplRecordHandler handles POST upload of meta-data record
 func CreateTmplRecordHandler(c *gin.Context) {
 	TmplRecordHandler(c, "create")
