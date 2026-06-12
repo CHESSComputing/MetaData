@@ -251,14 +251,58 @@ func DataHandler(c *gin.Context) {
 
 // SubmitTmplRecordHandler handles submition of tmpl records to FOXDEN
 func SubmitTmplRecordHandler(c *gin.Context) {
-	// provided record should pass through these steps:
-	// 1. we take record and extract from it its Schema
-	// 2. using schema name we identify which schema file to use
-	// 3. we initialize beamlines.Scheam{SchemaFileName: schemafilename} object
-	// 4. we perform partial (tmpl) record validation via s.ValidateTmplRecord(rec)
-	// 5. we extract from spec the rest of the record (filled by spec)
-	// 6. we merge records parts together
-	// 7. we inject record into FOXDEN
+
+	// Bind JSON payload to struct
+	var rec map[string]any
+	if err := c.ShouldBindJSON(&rec); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	log.Printf("received record %+v", rec)
+
+	// extract from it its Schema
+	var sname string
+	if val, ok := rec["SchemaName"]; ok {
+		sname = fmt.Sprintf("%s", val)
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "no schema name found in template record"})
+		return
+	}
+
+	// using schema name we identify which schema file to use
+	schemaFile := beamlines.SchemaFileName(sname)
+
+	// we initialize beamlines.Schema object
+	sobj := beamlines.Schema{FileName: schemaFile}
+
+	// we extract from spec the rest of the record (filled by spec)
+	srec := specRecord(rec)
+
+	// we merge records parts together
+	for k, v := range rec {
+		if _, ok := srec[k]; !ok {
+			srec[k] = v
+		}
+	}
+
+	// validate final record
+	errStr := sobj.ValidateAll(srec)
+	if errStr != "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": errStr})
+		return
+	}
+
+	// inject record into FOXDEN
+	attrs := srvConfig.Config.DID.Attributes
+	sep := srvConfig.Config.DID.Separator
+	div := srvConfig.Config.DID.Divider
+	updateRecord := false
+	did, err := insertData(schemaFile, srec, attrs, sep, div, updateRecord)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"did": did, "status": "ok"})
 }
 
 // CreateTmplRecordHandler handles POST upload of meta-data record
