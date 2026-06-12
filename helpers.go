@@ -569,3 +569,9 @@ func adjustTimestamp(specPtr *map[string]any) {
 		log.Printf("adjusted spec: %+v", spec)
 	}
 }
+
+func specRecord(tmplRec map[string]any) map[string]any {
+	rec := make(map[string]any)
+	// TODO: implement logic of getting spec record from tmpl record
+	return rec
+}
