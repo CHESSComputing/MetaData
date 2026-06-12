@@ -352,6 +352,9 @@ func validateTmplRecord(rec map[string]any) error {
 		if k == "timestamp" {
 			continue
 		}
+		if k == "did" {
+			continue
+		}
 		copyRecord[k] = v
 	}
 	sname := fmt.Sprintf("%s", val)
