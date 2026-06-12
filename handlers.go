@@ -479,7 +479,7 @@ func QueryHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, records)
 }
 
-// DeleteHandler handles POST queries
+// DeleteHandler handles DELETE requests to /record end-point
 func DeleteHandler(c *gin.Context) {
 	did := c.Request.FormValue("did")
 	_, user, err := server.GetAuthTokenUser(c)
@@ -512,6 +512,33 @@ func DeleteHandler(c *gin.Context) {
 				return
 			}
 		}
+	}
+	spec := make(map[string]any)
+	spec["did"] = did
+	err = metaDB.Remove(
+		srvConfig.Config.CHESSMetaData.DBName,
+		srvConfig.Config.CHESSMetaData.DBColl,
+		spec)
+	status := http.StatusOK
+	srvCode := services.OK
+	if err != nil {
+		status = http.StatusBadRequest
+		srvCode = services.RemoveError
+	}
+	rec := services.Response("MetaData", status, srvCode, err)
+	c.JSON(status, rec)
+}
+
+// DeleteTmplRecordHandler handles DELETE queries to /tmpl/record end-point
+func DeleteTmplRecordHandler(c *gin.Context) {
+	did := c.Request.FormValue("did")
+	_, user, err := server.GetAuthTokenUser(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   fmt.Sprintf("unable acquire auth token for user=%s", user),
+			"message": "no user found",
+			"code":    services.RemoveError})
+		return
 	}
 	spec := make(map[string]any)
 	spec["did"] = did

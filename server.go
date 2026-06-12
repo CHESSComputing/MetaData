@@ -48,6 +48,7 @@ func setupRouter() *gin.Engine {
 		{Method: "POST", Path: "/summary", Handler: SummaryHandler, Authorized: false},
 		{Method: "POST", Path: "/count", Handler: QueryCountHandler, Authorized: true},
 		{Method: "DELETE", Path: "/record", Handler: DeleteHandler, Authorized: true, Scope: "delete"},
+		{Method: "DELETE", Path: "/tmpl/record", Handler: DeleteTmplRecordHandler, Authorized: true, Scope: "delete"},
 	}
 	r := server.Router(routes, nil, "static", srvConfig.Config.CHESSMetaData.WebServer)
 	return r
