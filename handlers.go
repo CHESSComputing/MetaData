@@ -531,7 +531,7 @@ func DeleteHandler(c *gin.Context) {
 
 // DeleteTmplRecordHandler handles DELETE queries to /tmpl/record end-point
 func DeleteTmplRecordHandler(c *gin.Context) {
-	did := c.Request.FormValue("did")
+	did := c.Query("did")
 	_, user, err := server.GetAuthTokenUser(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -542,9 +542,10 @@ func DeleteTmplRecordHandler(c *gin.Context) {
 	}
 	spec := make(map[string]any)
 	spec["did"] = did
+	// remove record from _tmpl collection
 	err = metaDB.Remove(
 		srvConfig.Config.CHESSMetaData.DBName,
-		srvConfig.Config.CHESSMetaData.DBColl,
+		srvConfig.Config.CHESSMetaData.DBColl+"_tmpl",
 		spec)
 	status := http.StatusOK
 	srvCode := services.OK
