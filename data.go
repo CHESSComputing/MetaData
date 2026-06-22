@@ -383,6 +383,13 @@ func TmplRecord(rec map[string]any, action string) error {
 	}
 	// add timestamp to the record
 	rec["timestamp"] = time.Now().Unix()
+
+	// create new did for the record
+	did := createDID(rec)
+	if did != "" {
+		rec["did"] = did
+	}
+
 	// first find if such record exists
 	nrec := metaDB.Count(
 		srvConfig.Config.CHESSMetaData.MongoDB.DBName, collName, spec)
@@ -404,4 +411,21 @@ func TmplRecord(rec map[string]any, action string) error {
 			srvConfig.Config.CHESSMetaData.MongoDB.DBName, collName, rec)
 	}
 	return err
+}
+
+// helper function to create a did of template record
+func createDID(rec map[string]any) string {
+	if val, ok := rec["did"]; ok {
+		return fmt.Sprintf("%v", val)
+	}
+
+	// create did for tmpl record if it does not exist
+	did := "/tmpl"
+	keys := []string{"btr", "cycle", "sample_name", "timestamp"}
+	for _, key := range keys {
+		if val, ok := rec[key]; ok {
+			did = fmt.Sprintf("%s/%s=%v", did, key, val)
+		}
+	}
+	return did
 }
