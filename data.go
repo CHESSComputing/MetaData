@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 
@@ -29,6 +30,38 @@ func (h *HistoryRecord) String() string {
 	// Avoid recursive call by converting to a non-method type
 	type alias HistoryRecord
 	return fmt.Sprintf("%v", alias(*h))
+}
+
+// helper function to validate input data record against schema
+func castValues(sname string, rec map[string]any) (map[string]any, error) {
+	nrec := make(map[string]any)
+	smgr, ok := _smgr.Map[sname]
+	if !ok {
+		return nrec, errors.New("no schema found")
+	}
+	smap := smgr.Schema.Map
+	for k, v := range rec {
+		if m, ok := smap[k]; ok {
+			switch m.Type {
+			case "float64":
+				val, err := strconv.ParseFloat(v.(string), 64)
+				if err != nil {
+					return nrec, errors.New(fmt.Sprintf("unable to parse key=%v value=%v to float64, err=%v", k, v, err))
+				}
+				nrec[k] = val
+			case "int64":
+				val, err := strconv.ParseInt(v.(string), 10, 64)
+				if err != nil {
+					return nrec, errors.New(fmt.Sprintf("unable to parse key=%v value=%v to int64, err=%v", k, v, err))
+				}
+				nrec[k] = val
+			}
+		} else {
+			msg := fmt.Sprintf("key=%s does not exist in schema %v", k, sname)
+			return nrec, errors.New(msg)
+		}
+	}
+	return nrec, nil
 }
 
 // helper function to validate input data record against schema
@@ -359,7 +392,11 @@ func validateTmplRecord(rec map[string]any) error {
 	}
 	sname := fmt.Sprintf("%s", val)
 	schemaFile := beamlines.SchemaFileName(sname)
-	err := validateData(schemaFile, copyRecord)
+	crec, err := castValues(schemaFile, copyRecord)
+	if err != nil {
+		return err
+	}
+	err = validateData(schemaFile, crec)
 	if err != nil && strings.Contains(strings.ToLower(err.Error()), "mandatory") {
 		// since it is template record we don't need all mandatory keys and will skip this error
 		return nil
