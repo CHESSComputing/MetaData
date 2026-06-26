@@ -42,19 +42,24 @@ func castValues(sname string, rec map[string]any) (map[string]any, error) {
 	smap := smgr.Schema.Map
 	for k, v := range rec {
 		if m, ok := smap[k]; ok {
-			switch m.Type {
-			case "float64":
-				val, err := strconv.ParseFloat(v.(string), 64)
-				if err != nil {
-					return nrec, errors.New(fmt.Sprintf("unable to parse key=%v value=%v to float64, err=%v", k, v, err))
+			switch v.(type) {
+			case string:
+				switch m.Type {
+				case "float64":
+					val, err := strconv.ParseFloat(v.(string), 64)
+					if err != nil {
+						return nrec, errors.New(fmt.Sprintf("unable to parse key=%v value=%v type=%T to float64, err=%v", k, v, v, err))
+					}
+					nrec[k] = val
+				case "int64":
+					val, err := strconv.ParseInt(v.(string), 10, 64)
+					if err != nil {
+						return nrec, errors.New(fmt.Sprintf("unable to parse key=%v value=%v to int64, err=%v", k, v, err))
+					}
+					nrec[k] = val
 				}
-				nrec[k] = val
-			case "int64":
-				val, err := strconv.ParseInt(v.(string), 10, 64)
-				if err != nil {
-					return nrec, errors.New(fmt.Sprintf("unable to parse key=%v value=%v to int64, err=%v", k, v, err))
-				}
-				nrec[k] = val
+			default:
+				nrec[k] = v
 			}
 		} else {
 			msg := fmt.Sprintf("key=%s does not exist in schema %v", k, sname)
@@ -406,7 +411,7 @@ func TmplRecord(rec map[string]any, action string) error {
 	if val, ok := rec["btr"]; ok {
 		spec["btr"] = val
 	} else {
-		return errors.New("provided tmp records does not contain btr key")
+		return errors.New("provided tmpl records does not contain btr key")
 	}
 	if val, ok := rec["sample_name"]; ok {
 		spec["sample_name"] = val
