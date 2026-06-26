@@ -262,7 +262,7 @@ func SubmitTmplRecordHandler(c *gin.Context) {
 
 	// extract from it its Schema
 	var sname string
-	if val, ok := rec["SchemaName"]; ok {
+	if val, ok := rec["tmpl_schema"]; ok {
 		sname = fmt.Sprintf("%s", val)
 	} else {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "no schema name found in template record"})
@@ -341,6 +341,8 @@ func TmplRecordHandler(c *gin.Context, action string) {
 		c.JSON(http.StatusInternalServerError, rec)
 		return
 	}
+	resp := services.Response("MetaData", http.StatusOK, services.OK, nil)
+	c.JSON(http.StatusOK, resp)
 }
 
 // UpdateParams represents JSON struct used by UpdateHandler
@@ -542,13 +544,26 @@ func DeleteTmplRecordHandler(c *gin.Context) {
 	}
 	spec := make(map[string]any)
 	spec["did"] = did
+	status := http.StatusOK
+	srvCode := services.OK
+	// check if did exists in tmpl collection
+	nrec := metaDB.Count(
+		srvConfig.Config.CHESSMetaData.DBName,
+		srvConfig.Config.CHESSMetaData.DBColl+"_tmpl",
+		spec)
+	if nrec == 0 {
+		status = http.StatusBadRequest
+		srvCode = services.RemoveError
+		msg := fmt.Sprintf("template record does not have did=%s", did)
+		rec := services.Response("MetaData", status, srvCode, errors.New(msg))
+		c.JSON(status, rec)
+		return
+	}
 	// remove record from _tmpl collection
 	err = metaDB.Remove(
 		srvConfig.Config.CHESSMetaData.DBName,
 		srvConfig.Config.CHESSMetaData.DBColl+"_tmpl",
 		spec)
-	status := http.StatusOK
-	srvCode := services.OK
 	if err != nil {
 		status = http.StatusBadRequest
 		srvCode = services.RemoveError

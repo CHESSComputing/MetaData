@@ -372,20 +372,15 @@ func decodeHistRecord(hr any) *HistoryRecord {
 
 // helper function to validate template record
 func validateTmplRecord(rec map[string]any) error {
-	val, ok := rec["SchemaName"]
+	val, ok := rec["tmpl_schema"]
 	if !ok {
-		return errors.New("provided template record does not have SchemaName key")
+		return errors.New("provided template record does not have tmpl_schema key")
 	}
-	// make local copy of the record without SchemaName for validation purposes
+	// make local copy of the record without tmpl_schema for validation purposes
+	skipKeys := []string{"tmpl_schema", "timestamp", "did", "user"}
 	copyRecord := make(map[string]any)
 	for k, v := range rec {
-		if k == "SchemaName" {
-			continue
-		}
-		if k == "timestamp" {
-			continue
-		}
-		if k == "did" {
+		if utils.InList(k, skipKeys) {
 			continue
 		}
 		copyRecord[k] = v
