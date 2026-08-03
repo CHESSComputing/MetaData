@@ -382,7 +382,7 @@ func validateTmplRecord(rec map[string]any) error {
 		return errors.New("provided template record does not have tmpl_schema key")
 	}
 	// make local copy of the record without tmpl_schema for validation purposes
-	skipKeys := []string{"tmpl_schema", "timestamp", "did", "user"}
+	skipKeys := []string{"tmpl_schema", "timestamp", "did", "user", "label"}
 	copyRecord := make(map[string]any)
 	for k, v := range rec {
 		if utils.InList(k, skipKeys) {

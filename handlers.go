@@ -323,11 +323,16 @@ func TmplRecordHandler(c *gin.Context, action string) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	validate := c.Query("validate")
 	err := validateTmplRecord(rec)
 	if err != nil {
 		log.Printf("ERROR: %v, record:\n%+v", err, rec)
 		rec := services.Response("MetaData", http.StatusInternalServerError, services.ValidateError, err)
 		c.JSON(http.StatusInternalServerError, rec)
+		return
+	}
+	if validate != "" {
+		c.JSON(http.StatusOK, rec)
 		return
 	}
 	if action == "update" {
