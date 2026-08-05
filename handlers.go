@@ -538,7 +538,6 @@ func DeleteHandler(c *gin.Context) {
 
 // DeleteTmplRecordHandler handles DELETE queries to /tmpl/record end-point
 func DeleteTmplRecordHandler(c *gin.Context) {
-	did := c.Query("did")
 	_, user, err := server.GetAuthTokenUser(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -547,8 +546,17 @@ func DeleteTmplRecordHandler(c *gin.Context) {
 			"code":    services.RemoveError})
 		return
 	}
+	did := c.Query("did")
+	btr := c.Query("btr")
+	label := c.Query("label")
 	spec := make(map[string]any)
 	spec["did"] = did
+	if btr != "" {
+		spec["btr"] = btr
+	}
+	if label != "" {
+		spec["label"] = label
+	}
 	status := http.StatusOK
 	srvCode := services.OK
 	// check if did exists in tmpl collection
