@@ -102,7 +102,7 @@ func parseSpec(c *gin.Context) (map[string]any, error) {
 func TmplRecordsHandler(c *gin.Context) {
 	collName := srvConfig.Config.CHESSMetaData.DBColl + "_tmpl"
 	spec := make(map[string]any)
-	attrs := []string{"btr", "cycle", "sample_name", "title"}
+	attrs := []string{"btr", "cycle", "sample_name", "title", "label"}
 	for _, key := range attrs {
 		val := c.Query(key)
 		if val != "" {
