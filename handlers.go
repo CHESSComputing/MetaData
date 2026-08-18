@@ -324,6 +324,7 @@ func TmplRecordHandler(c *gin.Context, action string) {
 		return
 	}
 	validate := c.Query("validate")
+	label := c.Query("label")
 	err := validateTmplRecord(rec)
 	if err != nil {
 		log.Printf("ERROR: %v, record:\n%+v", err, rec)
@@ -336,9 +337,9 @@ func TmplRecordHandler(c *gin.Context, action string) {
 		return
 	}
 	if action == "update" {
-		err = TmplRecord(rec, "update")
+		err = TmplRecord(rec, "update", label)
 	} else if action == "create" {
-		err = TmplRecord(rec, "create")
+		err = TmplRecord(rec, "create", label)
 	}
 	if err != nil {
 		log.Println("ERROR:", err)
