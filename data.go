@@ -405,7 +405,7 @@ func validateTmplRecord(rec map[string]any) error {
 }
 
 // TmplRecord handles template records actions
-func TmplRecord(rec map[string]any, action string) error {
+func TmplRecord(rec map[string]any, action, label string) error {
 	collName := srvConfig.Config.CHESSMetaData.DBColl + "_tmpl"
 	spec := make(map[string]any)
 	if val, ok := rec["btr"]; ok {
@@ -413,13 +413,29 @@ func TmplRecord(rec map[string]any, action string) error {
 	} else {
 		return errors.New("provided tmpl records does not contain btr key")
 	}
-	if val, ok := rec["sample_name"]; ok {
-		spec["sample_name"] = val
-	} else {
-		return errors.New("provided template record does not contain sample_name key")
-	}
+	spec["label"] = label
 	// add timestamp to the record
 	rec["timestamp"] = time.Now().Unix()
+
+	// make sure that record label is unique
+	if action == "create" {
+		log.Println("action create", rec)
+		// if we create new tmpl record we'll use unique label with timestamp
+		if val, ok := rec["label"]; ok {
+			rec["label"] = fmt.Sprintf("%v-%v", val, time.Now().UnixNano())
+		}
+	} else if action == "update" {
+		// if we want to update tmpl record we'll ensure that its label is not used anywhere
+		lspec := make(map[string]any)
+		if val, ok := rec["label"]; ok {
+			lspec["label"] = val
+			records := metaDB.Get(srvConfig.Config.CHESSMetaData.MongoDB.DBName, collName, lspec, 0, -1)
+			if len(records) == 1 {
+				msg := fmt.Sprintf("template record with label %v already exist", val)
+				return errors.New(msg)
+			}
+		}
+	}
 
 	// create new did for the record
 	did := createDID(rec)
@@ -435,17 +451,23 @@ func TmplRecord(rec map[string]any, action string) error {
 		err = metaDB.InsertRecord(
 			srvConfig.Config.CHESSMetaData.MongoDB.DBName, collName, rec)
 		return err
-	}
-	if nrec > 0 {
-		// if record exists we will update it
-		var records []map[string]any
-		records = append(records, rec)
-		err = metaDB.Upsert(
-			srvConfig.Config.CHESSMetaData.MongoDB.DBName, collName, "btr", records)
+	} else if action == "update" {
+		nrec := make(map[string]any)
+		nrec["$set"] = rec
+		err = metaDB.Update(
+			srvConfig.Config.CHESSMetaData.MongoDB.DBName, collName, spec, nrec)
 	} else {
-		// if record does not exist we will insert it
-		err = metaDB.InsertRecord(
-			srvConfig.Config.CHESSMetaData.MongoDB.DBName, collName, rec)
+		if nrec > 0 {
+			// if record exists we will update it
+			var records []map[string]any
+			records = append(records, rec)
+			err = metaDB.Upsert(
+				srvConfig.Config.CHESSMetaData.MongoDB.DBName, collName, "btr", records)
+		} else {
+			// if record does not exist we will insert it
+			err = metaDB.InsertRecord(
+				srvConfig.Config.CHESSMetaData.MongoDB.DBName, collName, rec)
+		}
 	}
 	return err
 }
