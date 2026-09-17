@@ -72,7 +72,13 @@ func checkUserBtrAffilication(btr string, req *http.Request) error {
 	}
 	btrs := claims.CustomClaims.Btrs
 	user := claims.CustomClaims.User
+	groups := claims.CustomClaims.Groups
+	if utils.InList("foxdenadmins", groups) {
+		// FOXDEN admins are allowed to perform any actions on metadata record
+		return nil
+	}
 	if utils.InList(btr, btrs) {
+		// user btr is in btrs list and therefore this user is allowed to perform any actions on metadata record
 		return nil
 	}
 	msg := fmt.Sprintf("[MetaData.main.checkUserBtrAffilication] user '%s' with btrs %+v is not authorized to perform %s action on record with btr=%s", user, btrs, req.Method, btr)
