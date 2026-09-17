@@ -5,7 +5,7 @@ go 1.27.1
 require (
 	github.com/CHESSComputing/golib v1.3.6
 	github.com/gin-gonic/gin v1.12.0
-	go.mongodb.org/mongo-driver/v2 v2.9.0
+	go.mongodb.org/mongo-driver/v2 v2.9.1
 )
 
 require (

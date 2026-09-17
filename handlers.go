@@ -13,7 +13,7 @@ import (
 	srvConfig "github.com/CHESSComputing/golib/config"
 	lexicon "github.com/CHESSComputing/golib/lexicon"
 	ql "github.com/CHESSComputing/golib/ql"
-	"github.com/CHESSComputing/golib/server"
+	server "github.com/CHESSComputing/golib/server"
 	services "github.com/CHESSComputing/golib/services"
 	"github.com/gin-gonic/gin"
 )
@@ -223,6 +223,18 @@ func DataHandler(c *gin.Context) {
 		rec := services.Response("MetaData", http.StatusInternalServerError, services.ValidateError, err)
 		c.JSON(http.StatusInternalServerError, rec)
 		return
+	}
+
+	// check user btr affiliation
+	if val, ok := record["btr"]; ok {
+		btr := fmt.Sprintf("%v", val)
+		err = checkUserBtrAffilication(btr, c.Request)
+		if err != nil {
+			log.Println("ERROR:", err)
+			rec := services.Response("MetaData", http.StatusInternalServerError, services.ValidateError, err)
+			c.JSON(http.StatusInternalServerError, rec)
+			return
+		}
 	}
 
 	// insert record to meta-data database

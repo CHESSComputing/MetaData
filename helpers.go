@@ -2,10 +2,14 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
 
+	authz "github.com/CHESSComputing/golib/authz"
+	srvConfig "github.com/CHESSComputing/golib/config"
 	utils "github.com/CHESSComputing/golib/utils"
 	"github.com/gin-gonic/gin"
 )
@@ -57,4 +61,20 @@ func specRecord(tmplRec map[string]any) map[string]any {
 	rec := make(map[string]any)
 	// TODO: implement logic of getting spec record from tmpl record
 	return rec
+}
+
+// checkUserBtrAffilication validates user's btr affiliation
+func checkUserBtrAffilication(btr string, req *http.Request) error {
+	tokenStr := authz.RequestToken(req)
+	claims, err := authz.TokenClaims(tokenStr, srvConfig.Config.Authz.ClientID)
+	if err != nil {
+		return err
+	}
+	btrs := claims.CustomClaims.Btrs
+	user := claims.CustomClaims.User
+	if utils.InList(btr, btrs) {
+		return nil
+	}
+	msg := fmt.Sprintf("[MetaData.main.checkUserBtrAffilication] user '%s' with btrs %+v is not authorized to perform %s action on record with btr=%s", user, btrs, req.Method, btr)
+	return errors.New(msg)
 }
