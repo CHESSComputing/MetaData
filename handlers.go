@@ -451,6 +451,7 @@ func QueryHandler(c *gin.Context) {
 	limit := rec.ServiceQuery.Limit
 	sortOrder := rec.ServiceQuery.SortOrder
 	sortKeys := rec.ServiceQuery.SortKeys
+	projection := rec.ServiceQuery.Projection
 
 	spec := rec.ServiceQuery.Spec
 	if spec != nil {
@@ -483,10 +484,17 @@ func QueryHandler(c *gin.Context) {
 				srvConfig.Config.CHESSMetaData.DBColl,
 				spec, sortKeys, sortOrder, idx, limit)
 		} else {
-			records = metaDB.Get(
-				srvConfig.Config.CHESSMetaData.DBName,
-				srvConfig.Config.CHESSMetaData.DBColl,
-				spec, idx, limit)
+			if len(projection) > 0 {
+				records = metaDB.GetProjection(
+					srvConfig.Config.CHESSMetaData.DBName,
+					srvConfig.Config.CHESSMetaData.DBColl,
+					spec, projection, idx, limit)
+			} else {
+				records = metaDB.Get(
+					srvConfig.Config.CHESSMetaData.DBName,
+					srvConfig.Config.CHESSMetaData.DBColl,
+					spec, idx, limit)
+			}
 		}
 	}
 	if Verbose > 0 {
